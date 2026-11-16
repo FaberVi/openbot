@@ -157,7 +157,12 @@ describe("CRM migration", () => {
       if (version < 62) migrateUpTo(db, 62);
       const before = contents(db);
       migrateOpenBotDatabase(db);
-      expect(contents(db)).toEqual({ ...before, ...CRM_TABLES_AFTER_MIGRATION });
+      expect(contents(db)).toEqual({
+        ...before,
+        ...CRM_TABLES_AFTER_MIGRATION,
+        remote_agent_bridge_invites: [],
+        remote_agent_bridge_links: [],
+      });
       expectHealthy(db);
     },
   );
@@ -175,7 +180,12 @@ describe("CRM migration", () => {
     expect(db.prepare("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: 1 });
     db.exec("DROP TRIGGER fail_marker");
     migrateOpenBotDatabase(db);
-    expect(contents(db)).toEqual({ ...before, ...CRM_TABLES_AFTER_MIGRATION });
+    expect(contents(db)).toEqual({
+      ...before,
+      ...CRM_TABLES_AFTER_MIGRATION,
+      remote_agent_bridge_invites: [],
+      remote_agent_bridge_links: [],
+    });
     expectHealthy(db);
   });
 
