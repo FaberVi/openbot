@@ -106,6 +106,7 @@ export const messages = {
     "Questa richiesta supera il limite del contesto di instradamento. Seleziona un membro o invia una richiesta più breve.",
   "error.backend.channelTaskMemberRequired": "Scegli un membro per questa attività.",
   "error.backend.channelTaskStopped": "Interrotta. Continua o riassegna questa attività.",
+  "error.backend.channelTaskFailed": "L'agente non ha potuto completare questa attività.",
   "error.backend.channelRoutingUnreadable":
     "Il responsabile non ha potuto instradare questo messaggio. Riassegnalo a un membro.",
   "error.backend.channelRoutingFailed": "L'instradamento non è riuscito. Scegli un membro o riprova.",
