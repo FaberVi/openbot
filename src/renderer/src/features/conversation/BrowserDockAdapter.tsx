@@ -56,7 +56,7 @@ export function BrowserDockAdapter(adapterProps: { tab: BrowserTab | undefined; 
     openExternalMessageUrl,
     setActiveRightPanel,
   } = useConversationViewScope();
-  const { t } = useText();
+  const { t, sourceText } = useText();
   const control = () => (adapterProps.tab ? browserControlForTab(adapterProps.tab) : undefined);
   const working = () => Boolean(props.activeTurnId) || control()?.phase === "acting";
   const [handoffPending, setHandoffPending] = createSignal(false);
@@ -152,7 +152,12 @@ export function BrowserDockAdapter(adapterProps: { tab: BrowserTab | undefined; 
       return { kind: "activity", control: "agent", label: t(browserActionLabel(session)) };
     }
     if (working()) {
-      return { kind: "activity", control: "agent", label: props.activityDetail || t("chat.activity.workingOnIt") };
+      const detail = props.activityDetail?.trim();
+      return {
+        kind: "activity",
+        control: "agent",
+        label: detail ? sourceText(detail) : t("chat.activity.workingOnIt"),
+      };
     }
     const answer = reply();
     return answer ? { kind: "reply", id: answer.id, body: answer.body } : null;
