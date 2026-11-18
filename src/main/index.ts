@@ -111,6 +111,7 @@ import { pluginIpcHandlers } from "./ipc/plugin-handlers";
 import { providerAdminIpcHandlers } from "./ipc/provider-admin-handlers";
 import { providerDetectionIpcHandlers } from "./ipc/provider-detection-handlers";
 import { providerIpcHandlers } from "./ipc/provider-handlers";
+import { remoteAgentBridgeIpcHandlers } from "./ipc/remote-agent-bridge-handlers";
 import { routineFeedIpcHandlers } from "./ipc/routine-feed-handlers";
 import { routineFlowIpcHandlers } from "./ipc/routine-flow-handlers";
 import { routineIpcHandlers } from "./ipc/routine-handlers";
@@ -915,6 +916,7 @@ function registerIpcHandlers({
   sidebarLayout,
   sidebarPins,
   host,
+  remoteAgentBridgeReach,
   remoteDesktop,
   remoteServers,
   centralAuth,
@@ -1072,6 +1074,12 @@ function registerIpcHandlers({
     ...eventsIpcHandlers({ events, remoteServers }),
     ...hostedServerIpcHandlers({ hostedServers }),
     ...localServerIpcHandlers({ localServers }),
+    ...remoteAgentBridgeIpcHandlers({
+      bridge: service.remoteAgentBridge,
+      bridgeReach: remoteAgentBridgeReach,
+      remoteServers,
+      serverName: () => teamStore.getIdentity()?.serverName ?? "OpenBot",
+    }),
     ...customProviderIpcHandlers(customProviderChanges),
     ...customAgentIpcHandlers({ changes: customAgentChanges, remoteServers }),
     ...acpRegistryIpcHandlers(acpRegistry, remoteServers),

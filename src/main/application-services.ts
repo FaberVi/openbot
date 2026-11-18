@@ -378,6 +378,7 @@ import { toProviderRuntimeFailure } from "./provider-runtime-effects";
 import { ProviderRuntimeManager, providerRuntimeRoot, runtimeTarget } from "./provider-runtime-manager";
 import { ProviderUseSettingsStore } from "./provider-use-settings-store";
 import { RelayedMessagingInstalls } from "./relayed-messaging-installs";
+import { RemoteAgentBridgeReach } from "./remote-agent-bridge-reach";
 import { decodeQueuedMessageReceipt } from "./remote-agent-decoding";
 import { RemoteConnectTrace } from "./remote-connect-trace";
 import { createRemoteControlPolicyStore } from "./remote-control-policy-store";
@@ -792,6 +793,8 @@ export interface ApplicationServices {
   agentInitialization: AgentInitializationGate<AgentLifecycleFailed>;
   sidebarLayout: SidebarLayoutStore;
   host: HostService;
+  /** Null when this build has no bridge reach helper. */
+  remoteAgentBridgeReach: RemoteAgentBridgeReach | null;
   remoteDesktop: RemoteDesktopManager;
   remoteServers: RemoteServerManager;
   /** Null in a local server, in server mode and on a hosted server. */
@@ -2309,6 +2312,17 @@ export async function createApplicationServices({
   const service: AgentService = new AgentService({
     store,
     mailbox,
+    remoteAgentBridgeCipher: {
+      encrypt: (value) =>
+        secretStorage()
+          .cipher(() => "OpenBot cannot encrypt a server link.")
+          .encrypt(value),
+      decrypt: (value) =>
+        secretStorage()
+          .cipher(() => "OpenBot cannot read a server link.")
+          .decrypt(value),
+    },
+    serverName: () => teamStore.getIdentity()?.serverName ?? "OpenBot",
     browser,
     visualPreview: new ChatVisualPreviewer(),
     // `agentDefaultsSettings` is built after the service; a tool call reads it.
@@ -3528,6 +3542,11 @@ export async function createApplicationServices({
       }),
     remove: (mcpServerId) => mcpAccessStore.remove(mcpServerId),
   };
+  let hostRef: HostService | null = null;
+  const remoteAgentBridgeReach = new RemoteAgentBridgeReach({
+    bridge: service.remoteAgentBridge,
+    teamApiPort: () => hostRef?.teamApiPort() ?? null,
+  });
   // The login of the remote desktop runtime. Only this process uses it, on loopback, and each runtime
   // start gives it to Sunshine again. So it stays in memory: the remote desktop also starts when the
   // system keyring or the macOS Keychain is not available.
@@ -3728,6 +3747,9 @@ export async function createApplicationServices({
       },
       routineResults: routineResultRuntime,
       routineRunCommand: service,
+      remoteAgentBridge: service.remoteAgentBridge,
+      remoteAgentBridgeReach,
+      serverName: () => teamStore.getIdentity()?.serverName ?? "OpenBot",
       // The desktop app's own server only. The servers are made below, after this host.
       ...(localServerChild || serverModeEnvironment || hostedServer
         ? {}
@@ -3899,6 +3921,7 @@ export async function createApplicationServices({
         catch: (cause) => new RemoteWorkflowError({ cause }),
       }),
   });
+  hostRef = host;
   teardown.push(TEARDOWN_ORDER.host, "the local host", () => runCauseEffect(host.shutdown()));
   const signedInState = centralAuth.getState();
   if (localServerChild) {
@@ -4849,6 +4872,7 @@ export async function createApplicationServices({
     describeRestartReadiness,
     sidebarLayout,
     host,
+    remoteAgentBridgeReach,
     remoteDesktop,
     remoteServers,
     localServers,
