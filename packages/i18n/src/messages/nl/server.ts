@@ -253,7 +253,7 @@ export const messages = {
     "Gebruik Tailscale op deze computer. OpenBot zet alleen de routes voor gekoppelde servers op je tailnet en gebruikt dat adres in koppelcodes.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "Koppeling tussen netwerken voorbereiden",
   "server.settings.remoteAgentsCrossNetworkReady": "Klaar voor een ander netwerk",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale aan; voorbereiding ontbreekt",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale actief — voorbereiding nodig",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale is niet verbonden",
   "server.settings.identityRefreshFailed": "De identiteit van de server kon niet worden vernieuwd.",
   "server.settings.loadFailed": "De serverinstellingen konden niet laden.",

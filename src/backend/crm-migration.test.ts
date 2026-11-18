@@ -165,7 +165,6 @@ describe("CRM migration", () => {
         ...THREAD_EVENT_COMPACTION_TABLES_AFTER_MIGRATION,
         remote_agent_bridge_invites: [],
         remote_agent_bridge_links: [],
-
       });
       expectHealthy(db);
     },
@@ -190,7 +189,6 @@ describe("CRM migration", () => {
       ...THREAD_EVENT_COMPACTION_TABLES_AFTER_MIGRATION,
       remote_agent_bridge_invites: [],
       remote_agent_bridge_links: [],
-
     });
     expectHealthy(db);
   });

@@ -3004,8 +3004,7 @@ export class TeamApiServer {
         if (capability === HOST_PERSONALITY_CAPABILITY) return this.#options.admin?.personality !== undefined;
         if (capability === HOST_KEY_ROTATION_CAPABILITY) return this.#options.admin?.hostKey !== undefined;
         if (capability === LOCAL_SERVERS_CAPABILITY) return this.#options.admin?.localServers !== undefined;
-        if (capability === REMOTE_AGENT_BRIDGE_CAPABILITY)
-          return this.#options.admin?.remoteAgentBridge !== undefined;
+        if (capability === REMOTE_AGENT_BRIDGE_CAPABILITY) return this.#options.admin?.remoteAgentBridge !== undefined;
         if (capability === AGENT_MEMORY_LIMIT_CAPABILITY) return this.#options.admin?.memoryLimit !== undefined;
         if (capability === MEMORY_REVIEW_CAPABILITY) return this.#options.admin?.memoryReview !== undefined;
         if (capability === SKILL_LEARNING_CAPABILITY) return this.#options.admin?.skillLearning !== undefined;

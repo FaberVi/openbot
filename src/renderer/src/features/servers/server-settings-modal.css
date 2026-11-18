@@ -98,6 +98,42 @@
   user-select: text;
 }
 
+/* A bridge invite code is one long token; it must wrap in the content column instead of under the copy control. */
+.server-remote-agents-invite-code.ui-item {
+  align-items: flex-start;
+}
+
+.server-remote-agents-invite-code :where(.ui-item-description, .ui-item-description .ui-text) {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: break-all;
+}
+
+.server-remote-agents-invite-code .ui-item-actions {
+  flex-shrink: 0;
+}
+
+/* The redeem row has a label and a field. Bottom-align the action with the input, not the label. */
+.server-remote-agents-redeem-row.ui-item {
+  align-items: flex-end;
+}
+
+.server-remote-agents-redeem-row .ui-item-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.server-remote-agents-redeem-row .ui-field {
+  width: 100%;
+}
+
+.server-remote-agents-redeem-row .ui-item-actions {
+  flex-shrink: 0;
+  padding-bottom: 0;
+}
+
 .server-settings-error-toast {
   position: absolute;
   right: var(--openbot-space-6);

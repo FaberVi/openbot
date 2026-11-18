@@ -249,7 +249,7 @@ export const messages = {
     "Użyj Tailscale na tym komputerze. OpenBot udostępnia w tailnecie tylko trasy połączonych serwerów i wpisuje ten adres w kodach połączenia.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "Przygotuj połączenie między sieciami",
   "server.settings.remoteAgentsCrossNetworkReady": "Gotowe na inną sieć",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale włączony; brak przygotowania",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale włączony — wymagana konfiguracja",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale nie jest połączony",
   "server.settings.identityRefreshFailed": "Nie udało się odświeżyć tożsamości serwera.",
   "server.settings.loadFailed": "Nie udało się wczytać ustawień serwera.",

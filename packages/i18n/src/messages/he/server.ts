@@ -254,7 +254,7 @@ export const messages = {
     "השתמש ב-Tailscale במחשב הזה. OpenBot חושף רק את נתיבי השרתים המקושרים ב-tailnet ומשתמש בכתובת הזו בקודי הקישור.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "הכן קישור בין רשתות",
   "server.settings.remoteAgentsCrossNetworkReady": "מוכן לרשת אחרת",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale פעיל; ההכנה לא בוצעה",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale פעיל — נדרשת הכנה",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale לא מחובר",
   "server.settings.identityRefreshFailed": "לא ניתן לרענן את זהות השרת.",
   "server.settings.loadFailed": "לא ניתן לטעון את הגדרות השרת.",

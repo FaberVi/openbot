@@ -12,6 +12,7 @@ import Earth from "lucide-react-native/icons/earth";
 import Fingerprint from "lucide-react-native/icons/fingerprint-pattern";
 import HardDrive from "lucide-react-native/icons/hard-drive";
 import KeyRound from "lucide-react-native/icons/key-round";
+import Link2 from "lucide-react-native/icons/link-2";
 import RefreshCcw from "lucide-react-native/icons/refresh-ccw";
 import RefreshCw from "lucide-react-native/icons/refresh-cw";
 import RotateCcw from "lucide-react-native/icons/rotate-ccw";
@@ -80,7 +81,8 @@ interface LinkRowProps {
     | "/server-settings/vault"
     | "/server-settings/storage"
     | "/server-settings/import"
-    | "/server-settings/transfer";
+    | "/server-settings/transfer"
+    | "/server-settings/remote-agents";
   serverId: string;
   trailing?: ReactNode;
   disabled?: boolean;
@@ -171,6 +173,7 @@ export function ServerDataSections({ serverId }: { serverId: string }) {
   const storage = row((checks) => checks.canReadServerStorage(serverId));
   const importAgents = row((checks) => checks.canImportAgents(serverId));
   const transfer = row((checks) => checks.canTransferServer(serverId));
+  const remoteAgents = row((checks) => checks.canManageRemoteAgentBridge(serverId));
   const shown = (state: ServerRowState) => state !== "hidden";
   return (
     <>
@@ -200,7 +203,7 @@ export function ServerDataSections({ serverId }: { serverId: string }) {
           ) : null}
         </SettingsSection>
       ) : null}
-      {shown(importAgents) || shown(transfer) ? (
+      {shown(importAgents) || shown(transfer) || shown(remoteAgents) ? (
         <SettingsSection title={t("mobile.server.settings.moveSection")}>
           {shown(importAgents) ? (
             <LinkRow
@@ -218,6 +221,15 @@ export function ServerDataSections({ serverId }: { serverId: string }) {
               pathname="/server-settings/transfer"
               serverId={serverId}
               disabled={transfer === "disabled"}
+            />
+          ) : null}
+          {shown(remoteAgents) ? (
+            <LinkRow
+              label={t("mobile.server.settings.remoteAgents")}
+              icon={Link2}
+              pathname="/server-settings/remote-agents"
+              serverId={serverId}
+              disabled={remoteAgents === "disabled"}
             />
           ) : null}
         </SettingsSection>
@@ -342,9 +354,8 @@ export function ServerGeneralSection({ serverId }: { serverId: string }) {
   const updateRow = row((checks) => checks.serverUpdateAccess(serverId));
   const timezoneRow = row((checks) => checks.canManageServerTimezone(serverId));
   const agentsRow = row((checks) => permitsAgentSettings(checks, serverId));
-  const remoteAgentsRow = row((checks) => checks.canManageRemoteAgentBridge(serverId));
   const updateShown = Boolean(update.access || update.query.data) || updateRow === "disabled";
-  if (!updateShown && timezoneRow === "hidden" && agentsRow === "hidden" && remoteAgentsRow === "hidden") return null;
+  if (!updateShown && timezoneRow === "hidden" && agentsRow === "hidden") return null;
   const zone = timezone.query.data;
   return (
     <SettingsSection
@@ -381,15 +392,6 @@ export function ServerGeneralSection({ serverId }: { serverId: string }) {
           onPress={() => router.push({ pathname: "/server-settings/agents", params: { serverId } })}
         >
           <Typography.Paragraph>{t("mobile.server.route.agents")}</Typography.Paragraph>
-        </SettingsRow>
-      )}
-      {remoteAgentsRow === "hidden" ? null : (
-        <SettingsRow
-          leading={<RowIcon icon={Bot} />}
-          disabled={remoteAgentsRow === "disabled"}
-          onPress={() => router.push({ pathname: "/server-settings/remote-agents", params: { serverId } })}
-        >
-          <Typography.Paragraph>{t("mobile.server.settings.remoteAgents")}</Typography.Paragraph>
         </SettingsRow>
       )}
     </SettingsSection>

@@ -1,20 +1,17 @@
 import { feedbackSentIssue } from "@openbot/contracts/feedback";
 import { serverInstallEvent } from "@openbot/contracts/hosted-servers";
 import {
-  type ClientAgentSummary,
-  type ConversationMessage,
-  type ConversationSearchPage,
-  isAgentStoredEmptyPreview,
-  type QueueDeliveryStatus,
-} from "@openbot/contracts/ipc";
-import {
   AGENT_INSTRUCTIONS_CHANGE_ITEM_TYPE,
   AGENT_WELCOME_ITEM_TYPE,
   CHANNEL_RESUME_ITEM_TYPE,
+  type ClientAgentSummary,
   CONVERSATION_MEMORY_CHANGES_ITEM_TYPE,
   CONVERSATION_PLAN_ITEM_TYPE,
   CONVERSATION_SUBAGENTS_ITEM_TYPE,
+  type ConversationMessage,
+  type ConversationSearchPage,
   hostedSiteConversationEvent,
+  isAgentStoredEmptyPreview,
   isChannelChangeMarker,
   isContextResetMarker,
   isPlanContinuationMarker,
@@ -23,6 +20,7 @@ import {
   mcpSignInEvent,
   modelSwitchReason,
   parseConversationPlanText,
+  type QueueDeliveryStatus,
   replacedConversationPlans,
   routineConversationEvent,
   routineRunConversationEvent,

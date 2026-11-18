@@ -32,6 +32,7 @@ import {
   History,
   ItemGroup,
   KeyRound,
+  Link2,
   Monitor,
   RefreshCw,
   Settings,
@@ -449,8 +450,8 @@ const NAV_SECTIONS: ReadonlyArray<{ value: Section; icon: typeof Settings; group
   { value: "desktop", icon: Monitor, group: "server.settings.group.server" },
   { value: "import", icon: Download, group: "server.settings.group.server" },
   { value: "transfer", icon: ArrowLeftRight, group: "server.settings.group.server" },
+  { value: "remote-agents", icon: Link2, group: "server.settings.group.server" },
   { value: "experimental", icon: FlaskConical, group: "server.settings.group.server" },
-  { value: "remote-agents", icon: ArrowLeftRight, group: "server.settings.group.server" },
 ];
 
 export function ServerSettingsModal(props: ServerSettingsModalProps) {

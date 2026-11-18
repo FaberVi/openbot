@@ -15,7 +15,7 @@ import {
 } from "@openbot/contracts/ipc";
 import { sourceText } from "@openbot/i18n/source";
 import { Effect } from "effect";
-import { AcpAgentClient, CURSOR_TURN_STALL_MS, type AcpHistoryPersistence } from "./acp-client";
+import { AcpAgentClient, type AcpHistoryPersistence, CURSOR_TURN_STALL_MS } from "./acp-client";
 import {
   CLINE_ACP_FLAVOR,
   COPILOT_ACP_FLAVOR,

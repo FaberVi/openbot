@@ -245,7 +245,7 @@ export const messages = {
     "Utilise Tailscale sur cet ordinateur. OpenBot n’expose que les routes des serveurs liés sur votre tailnet et met cette adresse dans les codes de liaison.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "Préparer la liaison entre réseaux",
   "server.settings.remoteAgentsCrossNetworkReady": "Prêt pour un autre réseau",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale actif ; préparation non faite",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale actif — préparation requise",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale n’est pas connecté",
   "server.settings.identityRefreshFailed": "Impossible d’actualiser l’identité du serveur.",
   "server.settings.loadFailed": "Impossible de charger les réglages du serveur.",

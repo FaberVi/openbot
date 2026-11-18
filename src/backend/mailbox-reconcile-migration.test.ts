@@ -220,7 +220,6 @@ describe("mailbox reconcile cleanup migration", () => {
     // From 38 on: migration 47 reads the task table that 38 creates.
     legacy.exec(
       "DELETE FROM schema_migrations WHERE version IN (38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66)",
-
     );
     // From 38 on: migration 47 reads the task table that 38 creates. The newest version is included,
     // so the replayed history has no hole between 37 and the version this database starts over from.
@@ -240,7 +239,6 @@ describe("mailbox reconcile cleanup migration", () => {
     expect(migrated.rebuildThreadProjection("openbot-thread-chief")).toEqual(replayed);
     expect(migrated.connection.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({
       version: 66,
-
     });
     migrated.close();
   });

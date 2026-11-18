@@ -249,7 +249,7 @@ export const messages = {
     "Используйте Tailscale на этом компьютере. OpenBot публикует в tailnet только маршруты связанных серверов и подставляет этот адрес в коды связи.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "Подготовить связь между сетями",
   "server.settings.remoteAgentsCrossNetworkReady": "Готово для другой сети",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale включён; подготовка не выполнена",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale подключён — нужна подготовка",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale не подключён",
   "server.settings.identityRefreshFailed": "Не удалось обновить данные сервера.",
   "server.settings.loadFailed": "Не удалось загрузить настройки сервера.",

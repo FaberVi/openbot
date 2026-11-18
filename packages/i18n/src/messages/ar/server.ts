@@ -271,7 +271,7 @@ export const messages = {
     "استخدم Tailscale على هذا الكمبيوتر. يعرض OpenBot مسارات الخوادم المرتبطة فقط على شبكة tailnet ويضع هذا العنوان في رموز الربط.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "تجهيز الربط عبر الشبكات",
   "server.settings.remoteAgentsCrossNetworkReady": "جاهز لشبكة أخرى",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale يعمل؛ التجهيز لم يُنفَّذ",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale متصل — التجهيز مطلوب",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale غير متصل",
   "server.settings.identityRefreshFailed": "تعذّر تحديث هوية الخادم.",
   "server.settings.loadFailed": "تعذّر تحميل إعدادات الخادم.",

@@ -258,7 +258,7 @@ export const messages = {
     "在此电脑上使用 Tailscale。OpenBot 仅在 tailnet 上暴露已链接服务器的路由，并将该地址写入链接代码。",
   "server.settings.remoteAgentsCrossNetworkPrepare": "准备跨网络连接",
   "server.settings.remoteAgentsCrossNetworkReady": "可供另一网络使用",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale 已开；尚未准备",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale 已连接 — 需完成准备",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale 未连接",
   "server.settings.identityRefreshFailed": "服务器身份信息刷新失败。",
   "server.settings.loadFailed": "服务器设置加载失败。",

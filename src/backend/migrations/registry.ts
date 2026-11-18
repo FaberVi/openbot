@@ -121,4 +121,3 @@ export const MIGRATIONS: readonly OpenBotMigration[] = [
   migration0065,
   migration0066,
 ];
-

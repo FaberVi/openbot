@@ -28,7 +28,7 @@ export const REMOTE_AGENT_BRIDGE_SCHEMA_SQL = `
 `;
 
 export const migration: OpenBotMigration = {
-  version: 64,
+  version: 66,
   name: "remote-agent-bridge",
   // Only creates tables and their indexes, so no foreign-key pause and no vacuum. No host was linked
   // before it, so the tables start empty and every mailbox sender stays user, agent, or routine.

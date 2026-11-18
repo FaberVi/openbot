@@ -239,7 +239,7 @@ export const messages = {
     "このコンピューターで Tailscale を使います。OpenBot は tailnet 上でリンク済みサーバー用のルートだけを公開し、そのアドレスをリンクコードに入れます。",
   "server.settings.remoteAgentsCrossNetworkPrepare": "ネットワーク間リンクを準備",
   "server.settings.remoteAgentsCrossNetworkReady": "別ネットワークの準備完了",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale はオン；準備未完了",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale 接続済み — 準備が必要",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale は未接続",
   "server.settings.identityRefreshFailed": "サーバーの ID を更新できませんでした。",
   "server.settings.loadFailed": "サーバーの設定を読み込めませんでした。",

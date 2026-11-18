@@ -263,7 +263,7 @@ export const messages = {
     "이 컴퓨터에서 Tailscale을 사용하세요. OpenBot은 tailnet에서 연결된 서버 경로만 노출하고 링크 코드에 그 주소를 넣습니다.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "네트워크 간 연결 준비",
   "server.settings.remoteAgentsCrossNetworkReady": "다른 네트워크에 사용 가능",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale 켜짐; 준비 안 됨",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale 연결됨 — 준비 필요",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale 연결 안 됨",
   "server.settings.identityRefreshFailed": "서버 ID를 새로 고칠 수 없었어요.",
   "server.settings.loadFailed": "서버 설정을 불러올 수 없었어요.",

@@ -219,7 +219,7 @@ export function ServerRemoteAgentsSection(props: { serverId: string; calls: Remo
         </Item>
         <Show when={created()}>
           {(value) => (
-            <Item>
+            <Item class="server-remote-agents-invite-code">
               <ItemContent>
                 <ItemTitle>{t("server.settings.remoteAgentsCode")}</ItemTitle>
                 <ItemDescription>
@@ -238,7 +238,7 @@ export function ServerRemoteAgentsSection(props: { serverId: string; calls: Remo
             </Item>
           )}
         </Show>
-        <Item>
+        <Item class="server-remote-agents-redeem-row">
           <ItemContent>
             <Field label={t("server.settings.remoteAgentsPaste")}>
               <Input value={code()} onInput={(event) => setCode(event.currentTarget.value)} />

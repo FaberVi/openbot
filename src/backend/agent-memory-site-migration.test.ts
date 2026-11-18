@@ -23,7 +23,6 @@ const LATER_TABLES = {
   ...THREAD_EVENT_COMPACTION_TABLES_AFTER_MIGRATION,
   remote_agent_bridge_invites: [],
   remote_agent_bridge_links: [],
-
 };
 
 function databaseAt(version: number): DatabaseSync {

@@ -252,7 +252,7 @@ export const messages = {
     "Bu bilgisayarda Tailscale kullanın. OpenBot tailnette yalnızca bağlı sunucu yollarını açar ve bu adresi bağlantı kodlarına yazar.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "Ağlar arası bağlantıyı hazırla",
   "server.settings.remoteAgentsCrossNetworkReady": "Başka ağ için hazır",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale açık; hazırlık yok",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale açık — hazırlık gerekli",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale bağlı değil",
   "server.settings.identityRefreshFailed": "Sunucu kimliği yenilenemedi.",
   "server.settings.loadFailed": "Sunucu ayarları yüklenemedi.",

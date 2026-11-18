@@ -292,7 +292,7 @@ export const messages = defineMessages("server", {
     "Use Tailscale on this computer. OpenBot exposes only the linked-server routes on your tailnet, then puts that address in link codes.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "Prepare link across networks",
   "server.settings.remoteAgentsCrossNetworkReady": "Ready for another network",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale is on; prepare is not done",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale connected — preparation needed",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale is not connected",
   "server.settings.identityRefreshFailed": "The server identity could not refresh.",
   "server.settings.loadFailed": "The server settings could not load.",
