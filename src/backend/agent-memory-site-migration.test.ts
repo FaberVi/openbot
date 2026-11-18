@@ -2,6 +2,7 @@
 import { DatabaseSync, type SQLOutputValue } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
 import { CRM_TABLES_AFTER_MIGRATION } from "./crm/crm-schema";
+import { THREAD_EVENT_COMPACTION_TABLES_AFTER_MIGRATION } from "./migrations/0065-thread-event-compaction";
 import { migrateOpenBotDatabase } from "./openbot-database-schema";
 
 // Failure modes: the upgrade changes or loses a row of any table; an old memory gets a site; a failed
@@ -19,9 +20,10 @@ const SOURCES = Array.from({ length: 52 }, (_, index) => index + 8);
 const LATER_TABLES = {
   projection_messaging_history: [],
   ...CRM_TABLES_AFTER_MIGRATION,
-  projection_pinned_thread_messages: [],
+  ...THREAD_EVENT_COMPACTION_TABLES_AFTER_MIGRATION,
   remote_agent_bridge_invites: [],
   remote_agent_bridge_links: [],
+
 };
 
 function databaseAt(version: number): DatabaseSync {
@@ -90,7 +92,8 @@ function siteIndex(db: DatabaseSync) {
 }
 
 function expectHealthy(db: DatabaseSync): void {
-  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 64 });
+  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 66 });
+
   expect(siteIndex(db)).toEqual([{ name: "agent_memories_site" }]);
   expect(db.prepare("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: 1 });
   expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
@@ -159,9 +162,10 @@ describe("agent memory site migration", () => {
     seed(db);
     const before = contents(db);
     const columnsBefore = columns(db);
-    db.exec("INSERT INTO schema_migrations VALUES(65,'now')");
+    db.exec("INSERT INTO schema_migrations VALUES(67,'now')");
     expect(() => migrateOpenBotDatabase(db)).toThrow("newer than this application supports");
-    db.exec("DELETE FROM schema_migrations WHERE version=65; DELETE FROM schema_migrations WHERE version=57");
+    db.exec("DELETE FROM schema_migrations WHERE version=67; DELETE FROM schema_migrations WHERE version=57");
+
     expect(() => migrateOpenBotDatabase(db)).toThrow("missing version 57");
     expect(contents(db)).toEqual(before);
     expect(columns(db)).toEqual(columnsBefore);
@@ -174,7 +178,8 @@ describe("agent memory site migration", () => {
     migrateOpenBotDatabase(db);
     const after = contents(db);
     // An application one release newer than an older one adds 65: this one is the older application for it.
-    db.exec("INSERT INTO schema_migrations VALUES(65,'now')");
+    db.exec("INSERT INTO schema_migrations VALUES(67,'now')");
+
     expect(() => migrateOpenBotDatabase(db)).toThrow("newer than this application supports");
     expect(contents(db)).toEqual(after);
   });

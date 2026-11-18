@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
+import { THREAD_EVENT_COMPACTION_TABLES_AFTER_MIGRATION } from "./migrations/0065-thread-event-compaction";
 import { migrateOpenBotDatabase } from "./openbot-database-schema";
 
 // Failure modes: the upgrade changes or loses a row of any table; a task does not become a thread, or
@@ -143,7 +144,8 @@ function withoutTasks(rows: Record<string, unknown[]>): Record<string, unknown[]
 }
 
 function expectHealthy(db: DatabaseSync): void {
-  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 64 });
+  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 66 });
+
   expect(db.prepare("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: 1 });
   expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
   expect(db.prepare("PRAGMA integrity_check").get()).toEqual({ integrity_check: "ok" });
@@ -176,7 +178,11 @@ describe("agent thread migration", () => {
       if (version < 46) migrateUpTo(db, 46);
       const before = contents(db);
       migrateOpenBotDatabase(db);
-      expect(withoutTasks(contents(db))).toEqual({ ...withoutTasks(before), ...EMPTY_GITHUB_TABLES });
+      expect(withoutTasks(contents(db))).toEqual({
+        ...withoutTasks(before),
+        ...EMPTY_GITHUB_TABLES,
+        ...THREAD_EVENT_COMPACTION_TABLES_AFTER_MIGRATION,
+      });
       expect(threads(db)).toEqual(THREADS);
       expect(agentTables(db)).toEqual([
         { type: "index", name: "agent_threads_agent" },
@@ -250,9 +256,10 @@ describe("agent thread migration", () => {
     seedThreads(db);
     seedTasks(db);
     const before = contents(db);
-    db.exec("INSERT INTO schema_migrations VALUES(65,'now')");
+    db.exec("INSERT INTO schema_migrations VALUES(67,'now')");
     expect(() => migrateOpenBotDatabase(db)).toThrow("newer than this application supports");
-    db.exec("DELETE FROM schema_migrations WHERE version=65; DELETE FROM schema_migrations WHERE version=20");
+    db.exec("DELETE FROM schema_migrations WHERE version=67; DELETE FROM schema_migrations WHERE version=20");
+
     expect(() => migrateOpenBotDatabase(db)).toThrow("missing version 20");
     expect(contents(db)).toEqual(before);
   });

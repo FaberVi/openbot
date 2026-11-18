@@ -69,6 +69,7 @@ import {
   providerAvailability,
   providerTurnedOff,
   providerUsable,
+  splitServiceName,
 } from "./provider-model-options";
 import { SwapLabel, type SwapMotion } from "./SwapLabel";
 
@@ -278,14 +279,7 @@ export function ProviderModelPicker(props: ProviderModelPickerProps) {
   const customIds = createMemo(() => customProviderIds(props.customProviders ?? []));
   const modelOption = (provider: string, id: string) =>
     findModelOption(props.modelOptions, props.agentStatus?.providers, provider, id);
-  // A saved Cursor id can carry reasoning, and the listed row does not, so they match by the base id.
-  const selectedModel = createMemo(
-    () =>
-      modelOption(props.provider, props.value) ??
-      props.modelOptions.find(
-        (option) => option.provider === props.provider && cursorModelSelected(option.id, props.value),
-      ),
-  );
+  const selectedModel = createMemo(() => modelOption(props.provider, props.value));
   const selectedFixed = createMemo(() => fixedModelSettings(selectedModel()));
   /** The tab the current selection lives on: the Custom one for the user's endpoints and agents. */
   const activeProvider = (): RailId =>
@@ -650,9 +644,9 @@ export function ProviderModelPicker(props: ProviderModelPickerProps) {
     const effort = props.reasoningEffort;
     if (props.foreignProvider !== undefined || selectedHasVariants()) return;
     // The effort that the model value fixes is part of the model, also where the effort is not a setting.
-    const fixed = selectedFixed()?.effort;
-    if (fixed) return reasoningLabel(fixed, t);
-    if (!showsReasoningEffort() || !effort) return;
+    const fixed = selectedFixed();
+    if (fixed?.effort) return reasoningLabel(fixed.effort, t);
+    if (fixed || !showsReasoningEffort() || !effort) return;
     const model = selectedModel();
     if (!model?.supportedReasoningEfforts.includes(effort) || model.reasoningEffortConfigurable === false) return;
     return reasoningLabel(effort, t);
@@ -689,11 +683,14 @@ export function ProviderModelPicker(props: ProviderModelPickerProps) {
   };
   /**
    * The model name in the trigger. Beside an account it has no provider word, because the mark
-   * shows the provider and the account needs the room. The tooltip and the label keep the full name.
-   * A form field has the room of its row and keeps the full name.
+   * shows the provider and the account needs the room. An OpenCode model has no service either, as
+   * in its list: "OpenCode Go/DeepSeek" left the model no room (#8591). The tooltip and the label
+   * keep the full name. A form field has the room of its row and keeps the full name.
    */
   const triggerShownName = () => {
-    const name = triggerModelName();
+    const fullName = triggerModelName();
+    const model = splitServiceName(props.provider, fullName).name;
+    const name = !field() && activeProvider() === "opencode" && model.trim() ? model : fullName;
     const prefix = `${railName(activeProvider(), t)} `;
     return !field() && triggerAccount() && name.startsWith(prefix) ? name.slice(prefix.length) || name : name;
   };
@@ -948,8 +945,7 @@ export function ProviderModelPicker(props: ProviderModelPickerProps) {
                     : models().find(
                         (model) =>
                           model.provider === props.provider &&
-                          (cursorModelSelected(model.id, props.value) ||
-                            model.variants.some((variant) => variant.id === props.value)),
+                          (model.id === props.value || model.variants.some((variant) => variant.id === props.value)),
                       ),
                 );
                 const selectedKey = () => {
@@ -1065,17 +1061,29 @@ export function ProviderModelPicker(props: ProviderModelPickerProps) {
                   return list.find((model) => model.id === railDefaultModel(provider)) ?? list[0];
                 });
                 const effortOption = () => (ownsSelection() ? selectedModel() : pickerModelOption(effortModel()));
-                const effortOptions = createMemo(() => {
-                  const variants = effortModel()?.variants ?? [];
-                  if (variants.length) return variants;
-                  const option = effortOption();
-                  return showsReasoningEffort() && option && option.reasoningEffortConfigurable !== false
-                    ? option.supportedReasoningEfforts.map((effort) => ({
-                        id: effort,
-                        name: reasoningLabel(effort, t),
-                      }))
-                    : [];
-                });
+                // A model list refresh gives new objects for the same efforts. The list keeps its array
+                // then: a new array makes the open Effort list close.
+                const effortOptions = createMemo<{ id: string; name: string }[]>(
+                  () => {
+                    const variants = effortModel()?.variants ?? [];
+                    if (variants.length) return variants;
+                    const option = effortOption();
+                    return showsReasoningEffort() &&
+                      option &&
+                      option.reasoningEffortConfigurable !== false &&
+                      !fixedModelSettings(option)
+                      ? option.supportedReasoningEfforts.map((effort) => ({
+                          id: effort,
+                          name: reasoningLabel(effort, t),
+                        }))
+                      : [];
+                  },
+                  {
+                    equals: (previous, next) =>
+                      previous.length === next.length &&
+                      previous.every((option, i) => option.id === next[i]?.id && option.name === next[i]?.name),
+                  },
+                );
                 const effortValue = () => {
                   const model = effortModel();
                   const queued = queuedEffort();
@@ -1497,45 +1505,17 @@ function displayModelName(name: string | undefined, fallback: string): string {
 
 interface FixedModelSettings {
   context: string | null;
-  /** Only when the model has no effort setting of its own. */
   effort: AgentReasoningEffort | null;
   fast: boolean;
 }
 
 /**
- * The settings that a Cursor model value fixes, as in `grok-4.7[context=256k,reasoning=high,fast=true]`.
- * Each speed is its own value. Cursor refuses a value it did not list (#4411).
+ * The settings that a Cursor model value fixes, as in `grok-4.7[context=256k,reasoning_effort=high,fast=true]`.
+ * Cursor ACP lists one value for each model and refuses the others, so these are not choices (#4411),
+ * and such a model has no effort setting. The value says so also where the model option does not:
+ * a joined server does not send `reasoningEffortConfigurable` (#7737). Cursor names the effort
+ * `reasoning`, `effort` or `reasoning_effort`, which differs between models.
  */
-/**
- * A saved Cursor id from before the speed rows existed still names the same model. It can carry
- * `reasoning`, which the effort control owns, so that key does not have to be on the row.
- */
-function cursorModelSelected(listed: string, saved: string): boolean {
-  if (listed === saved) return true;
-  const left = cursorModelParameters(listed);
-  const right = cursorModelParameters(saved);
-  if (!left || !right || left.base !== right.base || left.params.size === 0) return false;
-  for (const [key, value] of left.params) {
-    if (right.params.get(key) !== value) return false;
-  }
-  return true;
-}
-
-function cursorModelParameters(value: string): { base: string; params: Map<string, string> } | null {
-  const open = value.indexOf("[");
-  if (open <= 0 || !value.endsWith("]")) return null;
-  const params = new Map<string, string>();
-  for (const pair of value.slice(open + 1, -1).split(",")) {
-    if (!pair) continue;
-    const separator = pair.indexOf("=");
-    if (separator <= 0) return null;
-    const key = pair.slice(0, separator);
-    if (key === "reasoning" || key === "effort") continue;
-    params.set(key, pair.slice(separator + 1));
-  }
-  return { base: value.slice(0, open), params };
-}
-
 function fixedModelSettings(model: ClientAgentModelOption | undefined): FixedModelSettings | null {
   if (model?.provider !== "cursor") return null;
   const params = /\[([^\]]*)\]$/u.exec(model.id)?.[1];
@@ -1544,11 +1524,7 @@ function fixedModelSettings(model: ClientAgentModelOption | undefined): FixedMod
   for (const pair of params.split(",")) {
     const [key, value = ""] = pair.split("=");
     if (key === "context" && /^\d+(?:\.\d+)?[km]$/iu.test(value)) settings.context = value;
-    else if (
-      (key === "reasoning" || key === "effort") &&
-      model.reasoningEffortConfigurable === false &&
-      isReasoningEffort(value)
-    )
+    else if ((key === "reasoning" || key === "effort" || key === "reasoning_effort") && isReasoningEffort(value))
       settings.effort = value;
     else if (key === "fast") settings.fast = value === "true";
   }
