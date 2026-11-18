@@ -292,7 +292,11 @@ export function AgentRuntimeFields({
                     label: t(EFFORT_LABELS[effort]),
                   })) ?? []),
                 ]}
-                enabled={enabled && Boolean(selected?.supportedReasoningEfforts.length)}
+                enabled={
+                  enabled &&
+                  selected?.reasoningEffortConfigurable !== false &&
+                  Boolean(selected?.supportedReasoningEfforts.length)
+                }
                 dark={theme === "dark"}
                 label={t("mobile.agent.runtime.reasoning")}
                 onChange={(effort) => {
