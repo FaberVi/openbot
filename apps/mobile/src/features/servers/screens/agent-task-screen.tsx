@@ -499,7 +499,7 @@ function AgentTaskChat({
   // Dictation and the attachment card keep the composer until they close: replacing it would end them.
   const keepsComposer = dictating || attachments.menuOpen;
   const secretRequest = showBrowserRequests && !keepsComposer ? taskBrowserRequests.find(asksForSecret) : undefined;
-  // A private answer to a form question is typed there too, never in a second field beside the composer.
+  // A private answer to a form question is typed in the question card; the bar below only sends it.
   const secretQuestion = !secretRequest && !keepsComposer && questionForm.question?.isSecret ? questionForm : undefined;
   const dark = useColorScheme() === "dark";
   const palette = useMemo(
