@@ -8,10 +8,10 @@
  * hidden agent, it shows when the user hid it in place of the last message and the time.
  */
 
+import { isAgentStoredEmptyPreview } from "@openbot/contracts/ipc";
 import { AppWindow, Badge, buttonVariants, Clock3, ContextMenu, Lock } from "@openbot/ui";
 import type { JSX } from "@solidjs/web";
 import { createSignal, Show } from "solid-js";
-import { isAgentStoredEmptyPreview } from "@openbot/contracts/ipc";
 import type { AgentProfile } from "../../data";
 import { useText } from "../../text";
 import { AgentAvatar } from "../agents/AgentAvatar";
