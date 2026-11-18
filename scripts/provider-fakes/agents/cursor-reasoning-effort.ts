@@ -12,7 +12,7 @@ type ModelId = (typeof MODELS)[number]["value"];
 
 const REASONING: Record<ModelId, readonly string[]> = {
   "composer-2.5": ["medium"],
-  "deepseek-v4": ["low", "medium", "high", "xhigh"],
+  "deepseek-v4": ["none", "low", "medium", "high", "max"],
 };
 
 let model: ModelId = "composer-2.5";

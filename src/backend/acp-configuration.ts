@@ -346,14 +346,51 @@ export class AcpConfiguration {
     const answeredEfforts = this.#answeredEfforts.models;
     // The sweep selects models on the process too, also while a turn sets its own.
     this.#processModel = null;
+    const listedValues = selectValues(option).map((entry) => entry.value);
     for (const model of models) {
-      const response = yield* this.#requestBeforeEffect(
-        () => connection.setSessionConfigOption({ sessionId: probe.sessionId, configId: option.id, value: model.id }),
+      // A parameterized catalog id is sent as its base, then each other parameter, as on a turn.
+      // Sending `deepseek-v4[fast=false]` whole leaves the reasoning option unpublished and every
+      // model shows medium only.
+      const resolved = resolveListedModel(model.id, listedValues);
+      const modelOptionValue = resolved?.base ?? model.id;
+      type ConfigOptionResponse = { configOptions: SessionConfigOption[] };
+      let probeResponse: ConfigOptionResponse | null = yield* this.#requestBeforeEffect<ConfigOptionResponse>(
+        () =>
+          connection.setSessionConfigOption({
+            sessionId: probe.sessionId,
+            configId: option.id,
+            value: modelOptionValue,
+          }),
         Math.min(sweepEnd, Date.now() + MODEL_REASONING_PROBE_TIMEOUT_MS),
         "session/set_config_option",
       );
+      if (probeResponse && resolved && resolved.params.size > 0) {
+        for (const [configId, value] of resolved.params) {
+          if (configId === "reasoning" || configId === "effort") continue;
+          const parameterOption: SessionConfigOption | undefined = probeResponse.configOptions.find(
+            (candidate) => candidate.id === configId,
+          );
+          if (!parameterOption) continue;
+          const nextResponse: ConfigOptionResponse | null = yield* this.#requestBeforeEffect<ConfigOptionResponse>(
+            () =>
+              parameterOption.type === "boolean"
+                ? connection.setSessionConfigOption({
+                    sessionId: probe.sessionId,
+                    configId,
+                    value: value === "true",
+                    type: "boolean",
+                  })
+                : connection.setSessionConfigOption({ sessionId: probe.sessionId, configId, value }),
+            Math.min(sweepEnd, Date.now() + MODEL_REASONING_PROBE_TIMEOUT_MS),
+            "session/set_config_option",
+          );
+          if (!nextResponse) break;
+          probeResponse = nextResponse;
+        }
+      }
+      const response = probeResponse;
       if (response) {
-        selected = model.id;
+        selected = modelOptionValue;
         answered += 1;
       }
       const efforts = response

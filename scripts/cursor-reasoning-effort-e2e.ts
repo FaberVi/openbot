@@ -15,7 +15,7 @@ import { installFakeAgent, readJsonl, runTurn, startThread, stopClients } from "
 
 const OUT = resolve(import.meta.dirname, "../.openbot-build/cursor-reasoning-effort-e2e");
 const DEEPSEEK = "deepseek-v4[fast=false]";
-const EFFORTS = ["low", "medium", "high", "xhigh"];
+const EFFORTS = ["none", "low", "medium", "high", "max"];
 
 /** A Windows spawn cannot run the shell script `installFakeAgent` writes, so the fake is a `.cmd`. */
 async function installCursorFake(executable: string, log: string): Promise<string> {
