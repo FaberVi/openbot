@@ -713,6 +713,7 @@ function registerIpcHandlers({
   updatePreferenceFile,
   requestedUpdate,
   idleRestart,
+  describeRestartReadiness,
   approvalAutomation,
   agentAdminSettings,
   agentHostSettings,
@@ -943,7 +944,13 @@ function registerIpcHandlers({
       translate: language.translate,
       reportUploadProgress: forwardInstanceTransferUploadProgress,
     }),
-    ...updateIpcHandlers({ updater, updatePreferenceFile, requestedUpdate, idleRestart }),
+    ...updateIpcHandlers({
+      updater,
+      updatePreferenceFile,
+      requestedUpdate,
+      idleRestart,
+      describeReadiness: describeRestartReadiness,
+    }),
     ...notificationIpcHandlers({
       notificationPreference,
       translate: language.translate,
