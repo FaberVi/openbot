@@ -705,6 +705,27 @@ export const messages = {
   "settings.voice.apiKey.remove": "Rimuovi chiave",
   "settings.voice.apiKey.saveFailed": "Impossibile salvare la chiave API. Riprova.",
   "settings.voice.apiKey.removeFailed": "Impossibile rimuovere la chiave API. Riprova.",
+  "settings.voice.model.title": "Modello",
+  "settings.voice.model.group.local": "Su questo computer",
+  "settings.voice.model.downloadingShort": "Download…",
+  "settings.voice.model.ready": "{name} è pronto",
+  "settings.voice.model.serverDictates": "Ora detta il tuo server vocale.",
+  "settings.voice.apiKey.providerLabel": "Chiave API di {provider}",
+  "settings.voice.apiKey.needed": "Incolla una chiave per usare {provider}",
+  "settings.voice.apiKey.removeLabel": "Rimuovi la chiave API di {provider}",
+  "settings.voice.speech.model.flash.description":
+    "Veloce. Invia il testo della risposta a ElevenLabs. Usa la tua chiave API, ed ElevenLabs addebita ogni utilizzo.",
+  "settings.voice.speech.model.multilingual.description":
+    "Più naturale e più lento. Invia il testo della risposta a ElevenLabs. Usa la tua chiave API, ed ElevenLabs addebita ogni utilizzo.",
+  "settings.voice.speech.model.v3.description":
+    "Espressivo e lento. Invia il testo della risposta a ElevenLabs. Usa la tua chiave API, ed ElevenLabs addebita ogni utilizzo.",
+  "settings.voice.speech.model.v4Turbo.description":
+    "Veloce, in più di 90 lingue. Invia il testo della risposta a ElevenLabs. Usa la tua chiave API, ed ElevenLabs addebita ogni utilizzo.",
+  "settings.voice.speech.model.v4.description":
+    "La migliore qualità, in più di 90 lingue, e lento. Invia il testo della risposta a ElevenLabs. Usa la tua chiave API, ed ElevenLabs addebita ogni utilizzo.",
+  "settings.voice.speech.model.xai.description":
+    "Invia il testo della risposta a xAI. Usa la tua chiave API, e xAI addebita ogni utilizzo.",
+  "settings.voice.speech.serverSpeaks": "Ora il tuo server vocale legge le risposte ad alta voce.",
   "settings.voice.speech.section": "Risposte vocali",
   "settings.voice.speech.model.description": "Legge le risposte ad alta voce su questo computer, in 31 lingue.",
   "settings.voice.speech.readReplies.title": "Leggi le risposte ad alta voce",
@@ -767,6 +788,8 @@ export const messages = {
   "settings.transfer.old.text": "Salva i suoi agenti e le impostazioni del server in un file.",
   "settings.transfer.new.title": "Importa in questo server",
   "settings.transfer.new.text": "Aggiungi gli agenti e le impostazioni del server da un file.",
+  "settings.transfer.notMovedSecrets":
+    "Chiavi API, accessi, connettori e preferenze dell'app non vengono spostati. Configurali di nuovo sul nuovo server.",
   "settings.transfer.back": "Indietro",
   "settings.transfer.loading": "Lettura dei tuoi agenti…",
   "settings.transfer.summary.label": "Contenuto del file",
@@ -796,6 +819,8 @@ export const messages = {
     "Nome, logo, fuso orario, personalità, predefiniti degli agenti, scelte dei modelli, impostazioni di memoria e skill, e i livelli di notifiche e gli elementi fissati di ogni persona.",
   "settings.transfer.export.settingsDescription":
     "Server MCP, provider di modelli personalizzati, sezioni della barra laterale, flussi di routine e skill condivise.",
+  "settings.transfer.export.historyDescription":
+    "Le chat, i thread laterali e i messaggi dei canali, con i file dei messaggi delle chat. Il file può essere grande.",
   "settings.transfer.export.chooseAgents": "Scegli gli agenti ({selected} di {total})",
   "settings.transfer.export.hideAgents": "Nascondi agenti",
   "settings.transfer.export.agentsLabel": "Agenti da esportare",
