@@ -211,6 +211,12 @@ export function isAgentMarketplaceSource(value: unknown): value is NonNullable<A
   );
 }
 
+export const AGENT_STORED_EMPTY_PREVIEW = "No messages yet";
+
+export function isAgentStoredEmptyPreview(preview: string): boolean {
+  return preview.trim() === AGENT_STORED_EMPTY_PREVIEW;
+}
+
 export interface AgentSummary {
   id: string;
   name: string;
