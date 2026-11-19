@@ -189,6 +189,8 @@ export const messages = {
   "error.remote.iceFailed":
     "Non è stato possibile stabilire una connessione diretta con l'host. Un firewall, una VPN o un proxy possono bloccarla.",
   "error.remote.iceDisconnected": "La connessione diretta con l'host è andata persa.",
+  "error.remote.webrtcBlocked":
+    "Questo dispositivo blocca la connessione di cui OpenBot ha bisogno. Se la modalità di isolamento è attiva, disattivala per OpenBot in Impostazioni > Privacy e sicurezza > Modalità di isolamento.",
   "error.remote.directoryUnreachable":
     "OpenBot non è riuscito a raggiungere il servizio OpenBot. Controlla la connessione.",
   "error.remote.directoryTimeout": "Il servizio OpenBot non ha risposto in tempo. Riprova.",
@@ -218,6 +220,11 @@ export const messages = {
   "error.remote.serverNotLoaded": "OpenBot non è riuscito a caricare il server. Riprova.",
   "error.remote.localServerNotStarted":
     "Il server su questo computer non si è avviato. Riprova. Se non si avvia, riavvia OpenBot su questo computer.",
+  "error.remote.localServerNotFound": "Questo server non è su questo computer.",
   "error.remote.localServerAccountRemovalFailed":
     "Il server è eliminato sul suo computer, ma l’account lo elenca ancora. Eliminalo di nuovo per rimuoverlo dall’account.",
+  "error.remote.localServerLimit":
+    "Puoi avere al massimo {limit} server su questo computer. Eliminane uno per crearne un altro.",
+  "error.remote.localServersReadOnly":
+    "Questa versione di OpenBot non può leggere l'elenco dei server su questo computer. Aggiorna OpenBot.",
 } as const satisfies PartialTranslation<typeof source>;

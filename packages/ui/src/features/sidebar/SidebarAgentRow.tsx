@@ -23,11 +23,6 @@ import { SidebarNameTooltip } from "./SidebarNameTooltip";
 import { sidebarAgentStateLabel, sidebarMessageTime, sidebarUsageResetTime } from "./sidebar-filtering";
 import { useSidebarScope } from "./sidebar-scope";
 
-/**
- * `waiting` is set by the "Needs you" and "Unread" groups. The row reads it rather than the agent's
- * state, because the group holds its members still during a drag while the state moves on. `userHidden` is set by
- * the "Hidden" group. A hidden agent that waits for the user is a `waiting` row of "Needs you".
- */
 export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boolean; userHidden?: boolean }) {
   const {
     dragOffset,
@@ -45,9 +40,7 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
   const accessLabel = () => (lockLabel() ? `. ${lockLabel()}` : "");
   const inWindow = () => props.windowAgentIds?.has(rowProps.agent.id) ?? false;
   const windowLabel = () => (inWindow() ? `. ${t("sidebar.agentMenu.inWindow")}` : "");
-  /** A host without `agent-hidden-work` stops a hidden agent, so its row shows the date and no state. */
   const paused = () => rowProps.userHidden === true && props.userHiddenAgentsWork !== true;
-  /** A row of "Needs you" can be a hidden agent. Its menu then has the restore item. */
   const hiddenByUser = () => userHiddenSince(rowProps.agent.id) !== undefined;
   const state = () => (paused() ? undefined : props.agentStates[rowProps.agent.id]);
   const hiddenDetail = () => {
@@ -56,8 +49,6 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
       ? t("sidebar.hidden.since", { date: format.date(new Date(since), { month: "short", day: "numeric" }) })
       : "";
   };
-  // A function, not a JSX ternary: the compiler wraps a ternary in a memo, and the avatar reads its
-  // mood inside an effect, where a memo cannot be created.
   const mood = () => (paused() ? "asleep" : (props.agentMoods[rowProps.agent.id] ?? "idle"));
   const hiddenLabel = () => (hiddenByUser() ? `${t("sidebar.hidden.title")}. ` : "");
   const draggable = () => chatsDraggable() && !props.compact && !rowProps.waiting && !rowProps.userHidden;
@@ -78,12 +69,9 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
   const labelDetail = () => (wait()?.detail ? "" : `. ${hiddenLabel()}${detail()}`);
   const [menuOpen, setMenuOpen] = createSignal(false);
   const [rowElement, setRowElement] = createSignal<HTMLElement>();
-  // The thread card covers the row's tooltip, so the tooltip does not open while the card shows.
   const [threadCardOpen, setThreadCardOpen] = createSignal(false);
   const coverOpen = () => menuOpen() || threadCardOpen();
-  // A drag starts on the item, also from a thread under the row. Only the agent row moves the agent.
   let dragFromThreads = false;
-  /** The side threads show in the full sidebar, and not for an agent that the host stops while hidden. */
   const threads = () => (props.compact || paused() ? undefined : props.agentThreads);
   const limit = () => {
     const current = state();
@@ -96,8 +84,6 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
       : "";
   };
   const routineLabel = () => (state()?.kind === "routine" || limit() ? stateLabel() : "");
-  // In the full sidebar, only a waiting row has a tooltip, so the rows in the sections do not each
-  // carry one. The compact sidebar shows only the avatar, so each row names its agent.
   const row = (): JSX.Element => (
     <ContextMenu.Root modal={false} onOpenChange={setMenuOpen}>
       <ContextMenu.Trigger
