@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useCSSVariable } from "uniwind";
 import { useAgentModelPicker, withAccountModels } from "@/features/agents/model/agent-model-picker";
+import { cursorModelSelected, cursorModelSpeedLabel } from "@/features/agents/model/cursor-model-speed";
 import { useQueryScope } from "@/features/auth/context/mobile-session-context";
 import {
   SettingsContent,
@@ -46,6 +47,8 @@ export function AgentModelPickerScreen() {
     models.data?.filter((option) => option.provider === request?.provider) ?? [],
     request?.accountModels ?? [],
   );
+  const modelLabel = (id: string, name: string) =>
+    request?.provider === "cursor" ? cursorModelSpeedLabel(name, id, t("mobile.agent.runtime.fast")) : name;
   const matches = options.filter((option) => {
     const text = `${option.name} ${option.id}`.toLocaleLowerCase();
     return words.every((word) => text.includes(word));
@@ -99,7 +102,10 @@ export function AgentModelPickerScreen() {
       ) : (
         <SettingsSection>
           {matches.slice(0, limit).map((option) => {
-            const on = option.id === request.model;
+            const on =
+              request.provider === "cursor"
+                ? cursorModelSelected(option.id, request.model ?? "")
+                : option.id === request.model;
             return (
               <SettingsRow
                 key={option.id}
@@ -113,7 +119,7 @@ export function AgentModelPickerScreen() {
                   router.back();
                 }}
               >
-                <Typography.Paragraph numberOfLines={2}>{option.name}</Typography.Paragraph>
+                <Typography.Paragraph numberOfLines={2}>{modelLabel(option.id, option.name)}</Typography.Paragraph>
               </SettingsRow>
             );
           })}
