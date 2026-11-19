@@ -1,5 +1,6 @@
 import type { AgentTask, AgentTaskHold, AgentTaskOutcome } from "@openbot/contracts/ipc";
 import type { MobileTextKey, MobileTranslate } from "@openbot/i18n/mobile";
+import type { MobileText } from "@/shared/lib/text";
 
 const OUTCOME_TEXT = {
   completed: "mobile.server.threads.state.completed",
@@ -15,8 +16,9 @@ const HOLD_TEXT = {
   "one-turn": "mobile.server.threads.hold.oneTurn",
 } as const satisfies Record<Exclude<AgentTaskHold, "task-limit">, MobileTextKey>;
 
-export function agentTaskStatus(task: AgentTask, t: MobileTranslate): string {
-  if (task.state === "running") return task.progress ?? t("mobile.server.threads.state.running");
+export function agentTaskStatus(task: AgentTask, t: MobileTranslate, sourceText: MobileText["sourceText"]): string {
+  if (task.state === "running")
+    return task.progress ? sourceText(task.progress) : t("mobile.server.threads.state.running");
   if (task.state === "queued") return t("mobile.server.threads.state.queued");
   if (task.outcome === null) return t("mobile.server.threads.state.new");
   return t(OUTCOME_TEXT[task.outcome]);
