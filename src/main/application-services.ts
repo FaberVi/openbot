@@ -1315,6 +1315,7 @@ export async function createApplicationServices({
       return agent ? agentBrowserProfile(agent) : { kind: "shared" };
     },
     profileExists: (profileId) => browserProfileStore.get(profileId) !== undefined,
+    agentChat: (threadId) => store.ownsThread(threadId),
     profileProxy: (profileId) => browserProxyConnection(browserProxyStore, browserProxyCipher, profileId),
     onProxyStatusChanged: () => browserProxyStatusChanged(),
     computerExit: (memberId) => browserEgress.exit(memberId),
@@ -1960,6 +1961,7 @@ export async function createApplicationServices({
     browser,
     finishCheck: true,
     visualPreview: new ChatVisualPreviewer(),
+    avatarDecoder: (bytes) => !nativeImage.createFromBuffer(Buffer.from(bytes)).isEmpty(),
     setCommitCoAuthor: (enabled) => agentDefaultsSettings.update({ commitCoAuthor: enabled }),
     clearPictureBackground: (bytes) => {
       const picture = nativeImage.createFromBuffer(Buffer.from(bytes));
