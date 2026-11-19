@@ -84,7 +84,14 @@ interface StoredMessage {
   sender:
     | { kind: "user" }
     | { kind: "agent"; agentId: string }
-    | { kind: "routine"; routineId: string; runId: string; routineName: string; scheduledFor: string };
+    | { kind: "routine"; routineId: string; runId: string; routineName: string; scheduledFor: string }
+    | {
+        kind: "remote-agent";
+        agentId: string;
+        agentName: string;
+        linkId: string;
+        serverName: string;
+      };
   senderMember?: ConversationMessageSender;
   text: string;
   attachments: StoredAttachment[];
@@ -1469,10 +1476,27 @@ export class MailboxStore {
             storedDelivery.resumeAfterUsageLimit?.previousTurnIds[0] ??
             storedDelivery.turnId ??
             undefined,
-          author: message.sender.kind === "agent" ? "agent" : "user",
-          source: message.sender.kind === "agent" ? "agent" : message.sender.kind === "routine" ? "routine" : "user",
+          author: message.sender.kind === "agent" || message.sender.kind === "remote-agent" ? "agent" : "user",
+          source:
+            message.sender.kind === "agent" || message.sender.kind === "remote-agent"
+              ? "agent"
+              : message.sender.kind === "routine"
+                ? "routine"
+                : "user",
           text: message.text,
-          senderAgentId: message.sender.kind === "agent" ? message.sender.agentId : undefined,
+          senderAgentId:
+            message.sender.kind === "agent" || message.sender.kind === "remote-agent"
+              ? message.sender.agentId
+              : undefined,
+          ...(message.sender.kind === "remote-agent"
+            ? {
+                remoteSender: {
+                  agentId: message.sender.agentId,
+                  agentName: message.sender.agentName,
+                  serverName: message.sender.serverName,
+                },
+              }
+            : {}),
           ...(message.senderMember ? { senderMember: { ...message.senderMember } } : {}),
           attachments: message.attachments.map(toAttachmentSummary),
           ...(message.voiceRecording && !message.voiceRecording.deletedAt
@@ -1485,9 +1509,9 @@ export class MailboxStore {
             position: delivery.position,
           },
           exchange:
-            message.sender.kind === "agent"
+            message.sender.kind === "agent" || message.sender.kind === "remote-agent"
               ? {
-                  direction: "incoming",
+                  direction: "incoming" as const,
                   messageId: message.id,
                   senderAgentId: message.sender.agentId,
                   recipientAgentIds: deliveries.map((item) => item.recipientAgentId),
@@ -1519,7 +1543,7 @@ export class MailboxStore {
           ...(storedDelivery.steeredAt === undefined ? {} : { steered: true as const }),
           status: delivery.status === "failed" ? "failed" : "completed",
           itemType:
-            message.sender.kind === "agent"
+            message.sender.kind === "agent" || message.sender.kind === "remote-agent"
               ? AGENT_EXCHANGE_ITEM_TYPE
               : message.sender.kind === "routine"
                 ? "routine"
@@ -3721,6 +3745,11 @@ function isStoredMessage(value: unknown): value is StoredMessage {
     isRecord(value.sender) &&
     (value.sender.kind === "user" ||
       (value.sender.kind === "agent" && isString(value.sender.agentId)) ||
+      (value.sender.kind === "remote-agent" &&
+        isString(value.sender.agentId) &&
+        isString(value.sender.agentName) &&
+        isString(value.sender.linkId) &&
+        isString(value.sender.serverName)) ||
       (value.sender.kind === "routine" &&
         isString(value.sender.routineId) &&
         isString(value.sender.runId) &&

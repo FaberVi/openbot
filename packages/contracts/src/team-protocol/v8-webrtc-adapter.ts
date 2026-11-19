@@ -51,6 +51,7 @@ export function encodeTeamProtocolV8WebRtcHttpResponse(
     subagents?: boolean;
     promptMultiSelect?: boolean;
     videoGeneration?: boolean;
+    remoteSender?: boolean;
     usageTertiary?: boolean;
     agentPendingRuntime?: boolean;
     memoryChanges?: boolean;
@@ -79,6 +80,7 @@ export function createTeamProtocolV8Event(
     subagents?: boolean;
     promptMultiSelect?: boolean;
     videoGeneration?: boolean;
+    remoteSender?: boolean;
     contextUsage?: boolean;
     backgroundWork?: boolean;
     usageTertiary?: boolean;
