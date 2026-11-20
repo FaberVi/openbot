@@ -183,6 +183,7 @@ import { createOpenBotLogger } from "@openbot/logging";
 import { workflowMediaCreditsOf, workflowMediaProvidersOf } from "@openbot/team-client/workflow-decoding";
 import { type CauseCode, classifyFailure, isCauseCode } from "@openbot/telemetry";
 import { Cause, Deferred, Effect, Exit, Fiber, Result, Schema, Scope, Semaphore } from "effect";
+import type { AgentImportToolPort } from "./agent/agent-import-tool-port";
 import { AgentMemories } from "./agent/agent-memories";
 import { AgentRemoval, AgentRemovalFailed } from "./agent/agent-removal";
 import { AgentSettingsRefused } from "./agent/agent-settings-refused";
@@ -442,6 +443,7 @@ export interface AgentServiceOptions {
   routineFlowTools?: () => RoutineFlowTools;
   workflowTools?: () => WorkflowTools;
   webhookRoutines?: () => WebhookRoutineWriter;
+  agentImportTools?: (() => AgentImportToolPort | null) | undefined;
   approvalAutomation?: ApprovalAutomationPolicy | undefined;
   busyMessageMode?: () => BusyMessageMode;
   responseStyle?: () => ResponseStyle;
@@ -573,6 +575,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly #localSkillTools: (() => LocalSkillTools) | undefined;
   readonly #routineFlowTools: (() => RoutineFlowTools) | undefined;
   readonly #workflowTools: (() => WorkflowTools) | undefined;
+  readonly #agentImportTools: (() => AgentImportToolPort | null) | undefined;
   readonly #developmentDefaults: boolean;
   readonly #busyMessageMode: () => BusyMessageMode;
   readonly #defaultTaskLimit: () => number;
@@ -606,6 +609,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       localSkillTools,
       routineFlowTools,
       workflowTools,
+      agentImportTools,
       developmentDefaults = false,
       computerUseMcpServer = () => null,
       githubConnector = null,
@@ -619,6 +623,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this.#localSkillTools = localSkillTools;
     this.#routineFlowTools = routineFlowTools;
     this.#workflowTools = workflowTools;
+    this.#agentImportTools = agentImportTools;
     this.#store = store;
     this.#mcp = new McpGateway({
       servers: new McpServerStore(store.database),
@@ -1936,6 +1941,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       ...(this.#localSkillTools === undefined ? {} : { localSkillTools: this.#localSkillTools }),
       ...(this.#routineFlowTools === undefined ? {} : { routineFlowTools: this.#routineFlowTools }),
       ...(this.#workflowTools === undefined ? {} : { workflowTools: this.#workflowTools }),
+      ...(this.#agentImportTools === undefined ? {} : { agentImportTools: this.#agentImportTools }),
       ...(options.approvalAutomation === undefined ? {} : { approvalAutomation: options.approvalAutomation }),
       ...(options.visualPreview === undefined ? {} : { visualPreview: options.visualPreview }),
       ...(options.setCommitCoAuthor === undefined ? {} : { setCommitCoAuthor: options.setCommitCoAuthor }),
