@@ -121,6 +121,9 @@ export function useChatMotion(
   const [historyVisible, setHistoryVisible] = useState(false);
   const [responseVisible, setResponseVisible] = useState(true);
   const pending = useRef<{ baseline: string | null; first: boolean; fromLatest: boolean } | null>(null);
+  const [pendingSend, setPendingSend] = useState(false);
+  const pendingSendRef = useRef(false);
+  const sendBaselineId = useRef<string | null>(null);
   const followLatest = useRef(true);
   const [keyboardLiftBehavior, setKeyboardLiftBehavior] = useState<"whenAtEnd" | "never">("whenAtEnd");
   const [latestGeneration, setLatestGeneration] = useState(0);
@@ -210,6 +213,22 @@ export function useChatMotion(
     },
     [],
   );
+  useLayoutEffect(() => {
+    if (!pendingSend) return;
+    const baseline = sendBaselineId.current;
+    if (!baseline || lastUserId === null || lastUserId === baseline) return;
+    let inner: number | null = null;
+    const frame = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
+        pendingSendRef.current = false;
+        setPendingSend(false);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      if (inner !== null) cancelAnimationFrame(inner);
+    };
+  }, [lastUserId, pendingSend]);
 
   const onViewportLayout = useCallback(
     (event: Pick<LayoutChangeEvent, "nativeEvent">) => {
@@ -239,10 +258,16 @@ export function useChatMotion(
       const list = listRef.current;
       if (!send || !list || info.anchorKey === undefined || info.anchorKey === send.baseline) return;
       pending.current = null;
+      const maintainedEnd = pendingSendRef.current;
+      pendingSendRef.current = false;
+      setPendingSend(false);
       reveal();
-      const animated = !send.first && send.fromLatest && !reducedMotion;
+      const skipEndScroll = maintainedEnd && !send.first && send.fromLatest;
+      const animated = !skipEndScroll && !send.first && send.fromLatest && !reducedMotion;
       if (sendScrollFrame.current !== null) cancelAnimationFrame(sendScrollFrame.current);
-      if (animated) {
+      if (skipEndScroll) {
+        sendScrollFrame.current = null;
+      } else if (animated) {
         sendScrollFrame.current = requestAnimationFrame(() => {
           sendScrollFrame.current = requestAnimationFrame(() => {
             sendScrollFrame.current = null;
@@ -320,7 +345,12 @@ export function useChatMotion(
     setKeyboardLiftBehavior("whenAtEnd");
     const baseline = current.current.lastUserId;
     const first = baseline === null;
+    sendBaselineId.current = baseline;
     pending.current = { baseline, first, fromLatest: atLatestNow.current };
+    if (!first) {
+      pendingSendRef.current = true;
+      setPendingSend(true);
+    }
     if (first) {
       firstOpacity.set(0);
       responseOpacity.set(0);
@@ -329,6 +359,8 @@ export function useChatMotion(
   }, [firstOpacity, responseOpacity]);
   const cancelSend = useCallback(() => {
     pending.current = null;
+    pendingSendRef.current = false;
+    setPendingSend(false);
     if (sendScrollFrame.current !== null) cancelAnimationFrame(sendScrollFrame.current);
     sendScrollFrame.current = null;
     cancelAnimation(firstOffset);
@@ -428,14 +460,16 @@ export function useChatMotion(
       keyboardProgress,
       keyboardLiftBehavior,
       /**
-       * The list keeps the latest message in view. A composer-backed question waits at the end while the
-       * chat grows. Secret and Vault cards scroll in the history. An opening chat stays at the latest
-       * message until the reader drags.
+       * The list keeps the latest message in view. A composer-backed question pins the end while the agent
+       * writes; secret and Vault cards do not. An opening chat and an explicit pin keep the end until the
+       * reader drags. After the first send in a chat, a short send window uses maintainScrollAtEnd so the
+       * new bubble does not jump before the anchor settles.
        */
       followsEnd:
         (requiredInputId !== null && keyboardLiftBehavior === "whenAtEnd") ||
         (openingFollow && !holdOpening) ||
-        pinnedToLatest,
+        pinnedToLatest ||
+        (pendingSend && keyboardLiftBehavior === "whenAtEnd"),
       scrollOffset,
       dragging,
       atEnd,
@@ -472,6 +506,7 @@ export function useChatMotion(
       requiredInputId,
       openingFollow,
       pinnedToLatest,
+      pendingSend,
       scrollOffset,
       dragging,
       atEnd,
