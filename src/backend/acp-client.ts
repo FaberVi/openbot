@@ -25,7 +25,7 @@ import {
 } from "@agentclientprotocol/sdk";
 import { agentProviderName } from "@openbot/contracts/agent-providers";
 import { attachmentMimeTypeForName } from "@openbot/contracts/attachment-files";
-import type { AgentSessionSettingsSnapshot, AgentSessionSettingValue } from "@openbot/contracts/ipc";
+import type { AgentSessionSettingsSnapshot, AgentSessionSettingValue, McpServerConfig } from "@openbot/contracts/ipc";
 import { type DynamicRecord, isBoolean, isString } from "@openbot/contracts/runtime-values";
 import { type SourceMessages, sourceText } from "@openbot/i18n/source";
 import { createOpenBotLogger, redactText } from "@openbot/logging";
@@ -80,6 +80,7 @@ import { runCauseEffect } from "./effect-boundary";
 import { encodedModelId, providerModelValue } from "./encoded-model-id";
 import { IdleThreadPool } from "./idle-thread-pool";
 import { type DynamicToolNamespace, LocalMcpBridge, type LocalMcpSession } from "./local-mcp-bridge";
+import type { McpToolArguments } from "./mcp-probe";
 import {
   type AcpMcpServer,
   acpMcpServerName,
@@ -93,7 +94,7 @@ import {
   mcpAgentParam,
   usableMcpServers,
 } from "./mcp-provider-shapes";
-import { type StdioMcpRelay, startStdioMcpRelay } from "./mcp-stdio-relay";
+import { type RelayedMcpToolOutcome, type StdioMcpRelay, startStdioMcpRelay } from "./mcp-stdio-relay";
 import { PendingServerRequests } from "./pending-server-requests";
 import type { SpawnTarget } from "./process-confinement";
 import {
@@ -263,6 +264,11 @@ interface SharedStdioRelay {
   users: number;
 }
 
+interface RelayedMcpServers {
+  own: readonly string[];
+  byName: ReadonlyMap<string, StdioMcpRelay>;
+}
+
 interface AcpThread {
   id: string;
   cwd: string;
@@ -274,6 +280,7 @@ interface AcpThread {
   currentModelId: string | null;
   mcp: LocalMcpSession;
   relays: Effect.Effect<void>;
+  relayed: RelayedMcpServers;
   activeTurn: AcpTurn | null;
   needsResume: boolean;
   transport: AcpConnection | null;
@@ -866,6 +873,18 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
       if (thread && (thread.workHold || this.#heldByBackgroundSubagent(thread))) return false;
     }
     return this.#supportsSessionResume || this.#loadsSessions;
+  }
+
+  callRelayedMcpTool(
+    externalThreadId: string,
+    config: McpServerConfig,
+    tool: string,
+    args: McpToolArguments,
+  ): Effect.Effect<RelayedMcpToolOutcome | null> {
+    const thread = this.#threads.get(externalThreadId);
+    if (!thread || thread.relayed.byName.size === 0) return Effect.succeed(null);
+    const name = acpMcpServerName(config, thread.relayed.own, this.#flavor.mcpServerName);
+    return thread.relayed.byName.get(name)?.callTool(tool, args) ?? Effect.succeed(null);
   }
 
   readonly releaseThread = Effect.fn("AcpAgentClient.releaseThread")(function* (
@@ -1600,7 +1619,11 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     let threadRef: AcpThread | null = null;
     let transport: AcpConnection | null = null;
     let closeRelays: Effect.Effect<void> | null = null;
+    let relayedServers: RelayedMcpServers = { own: [], byName: new Map() };
     let retained = false;
+    const relaysStdio =
+      this.#flavor.relayStdioMcpServers === true ||
+      (this.#flavor.relayStdioMcpServers === "unconfined" && !this.options.confine);
     return yield* Effect.acquireUseRelease(
       this.#bridge
         .createSession(
@@ -1640,6 +1663,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
             let id: string;
             let configOptions: SessionConfigOption[];
             let currentModelId: string | null;
+            const ownMcpServerNames = this.#ownMcpServerNames(cwd);
             const handoff = acpMcpServers(
               providerResult(
                 yield* Effect.result(
@@ -1651,17 +1675,18 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
                   ).pipe(toProviderClientOperationError),
                 ),
               ),
-              this.#ownMcpServerNames(cwd),
+              ownMcpServerNames,
               this.#flavor.mcpServerName,
-              this.#flavor.relayStdioMcpServers === true,
+              relaysStdio,
               Math.max(0, (this.#flavor.mcpServerLimit ?? Number.POSITIVE_INFINITY) - mcp.servers.length),
             );
             this.options.reportMcpDrops?.(this.provider, handoff.dropped);
             let given = handoff.servers;
-            if (this.#flavor.relayStdioMcpServers) {
+            if (relaysStdio) {
               const relayed = providerResult(yield* Effect.result(this.#relayStdioMcpServers(given, cwd)));
               given = relayed.servers;
               closeRelays = relayed.close;
+              relayedServers = { own: ownMcpServerNames, byName: relayed.byName };
             }
             let mcpServers = [...given, ...mcp.servers];
             const enableMcpServers = this.#flavor.enableMcpServers;
@@ -1729,6 +1754,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
               currentModelId,
               mcp,
               relays: closeRelays ?? Effect.void,
+              relayed: relayedServers,
               activeTurn: null,
               needsResume: false,
               transport: sessionTransport,
@@ -1817,6 +1843,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     const close = Effect.suspend(() =>
       Effect.forEach(used.splice(0), release, { discard: true, concurrency: "unbounded" }),
     );
+    const byName = new Map<string, StdioMcpRelay>();
     const environment = () => {
       const values: Record<string, string> = {};
       for (const [key, value] of Object.entries(process.env)) if (value !== undefined) values[key] = value;
@@ -1861,6 +1888,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
           );
         }
         const relay = yield* Deferred.await(entry.relay);
+        byName.set(server.name, relay);
         return {
           type: "http" as const,
           name: server.name,
@@ -1869,7 +1897,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
         };
       }),
     ).pipe(Effect.onError(() => close));
-    return { servers: relayed, close };
+    return { servers: relayed, close, byName };
   });
 
   readonly #restoreSessionEffect = Effect.fn("AcpAgentClient.restoreSession")(function* (
