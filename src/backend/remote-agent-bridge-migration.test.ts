@@ -3,7 +3,6 @@ import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
 import { migrateOpenBotDatabase } from "./openbot-database-schema";
 
-// Migration 66 only creates bridge tables. A saved mailbox message stays user, agent, or routine.
 const databases: DatabaseSync[] = [];
 afterEach(() => {
   for (const db of databases.splice(0)) db.close();
@@ -79,7 +78,7 @@ describe("remote agent bridge migration", () => {
 
     migrateOpenBotDatabase(db);
 
-    expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 66 });
+    expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 67 });
     expect(
       db
         .prepare("SELECT message_id, sender_kind, message_json FROM projection_mailbox_messages ORDER BY message_id")

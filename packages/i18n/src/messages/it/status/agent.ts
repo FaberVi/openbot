@@ -2,6 +2,11 @@ import type { PartialTranslation } from "../../../message";
 import type { messages as source } from "../../en/status/agent";
 
 export const messages = {
+  "status.agent.mcpSignInPage": "{name} ti chiede di accedere a `{address}`. [Accedi]({url}), poi scegli Continua.",
+  "status.agent.mcpSignInPageDoneDetail": "L'agente riprova a eseguire la richiesta.",
+  "status.agent.mcpSignInPageDecline": "Non accedere",
+  "status.agent.mcpSignInPageDeclineDetail": "La richiesta si interrompe.",
+  "status.agent.elicitationMoreOptions": "Altre opzioni: {options}. Per sceglierne una, digitala come risposta.",
   "status.agent.claudeWriteOutside":
     "Scrittura di {path}, fuori dal workspace dell'agente, dalla cartella condivisa e dalle cartelle temporanee.",
   "status.agent.contextCleared": "Contesto cancellato. Da qui inizia una nuova chat.",
@@ -28,6 +33,8 @@ export const messages = {
     "Acquisizione dello schermo principale e invio dell'immagine al modello dell'agente.",
   "status.agent.screenCaptureChannel":
     "L'immagine appare nel canale {channel} e ogni membro di questo server che legge il canale può vederla.",
+  "status.agent.screenCapturePermissionNext":
+    "Poi macOS può chiederti di consentire a OpenBot la registrazione dello schermo.",
   "status.agent.screenCaptureDisplay":
     "Acquisizione dello schermo {name} e invio dell'immagine al modello dell'agente.",
   "status.agent.screenCaptureWindow":
@@ -81,6 +88,7 @@ export const messages = {
   "status.agent.browserActing": "Uso della pagina web…",
   "status.agent.browserReviewing": "Analisi della pagina web…",
   "status.agent.memoriesSearching": "Ricerca nelle sue memorie…",
+  "status.agent.chatsSearching": "Ricerca nelle sue chat precedenti…",
   "status.agent.memoriesSearched": {
     one: "Ha cercato nelle sue memorie: {count} trovata",
     other: "Ha cercato nelle sue memorie: {count} trovate",
@@ -124,6 +132,7 @@ export const messages = {
     "Aggiungi il server MCP {name}: {target}. Ogni agente su questo server ottiene i suoi strumenti. OpenBot si connette per provarlo.",
   "status.agent.mcpServerChange":
     "Modifica il server MCP {name} in {target}. Ogni agente su questo server ottiene i suoi strumenti. OpenBot si connette per provarlo.",
+  "status.agent.mcpServerHeaders": "Modifica anche queste intestazioni: {names}.",
   "status.agent.mcpServerEnable": "Attiva il server MCP {name} per ogni agente su questo server.",
   "status.agent.mcpServerDisable": "Disattiva il server MCP {name} per ogni agente su questo server.",
   "status.agent.mcpServerRemove": "Rimuovi il server MCP {name} e il suo accesso da ogni agente su questo server.",
@@ -155,6 +164,8 @@ export const messages = {
   "status.agent.vaultField.country": "Codice paese",
   "status.agent.vaultField.phone": "Telefono",
   "status.agent.vaultField.email": "Indirizzo email",
+  "status.agent.finishCheckContinues":
+    "La richiesta non è ancora completata. L’agente continua ({current} di {limit}).",
   "status.agent.nextStepContinues":
     "L'agente si è fermato prima del passaggio successivo. Continua ({current} di {limit}).",
   "status.agent.planContinues": "Il piano ha passaggi aperti. L'agente continua ({current} di {limit}).",

@@ -131,8 +131,10 @@ export const messages = {
   "mobile.server.hosted.soldOut": "Распродано",
   "mobile.server.hosted.serverPlan": "{plan} · {interval}",
   "mobile.server.hosted.serverPlanEnds": "{plan} · {interval} · Заканчивается {date}",
+  "mobile.server.hosted.serverDataKept": "{plan} · Данные хранятся до {date}",
   "mobile.server.hosted.state.payment": "Ожидает оплаты",
   "mobile.server.hosted.state.setup": "Настраивается",
+  "mobile.server.hosted.state.restoring": "Восстановление данных",
   "mobile.server.hosted.state.starting": "Запускается",
   "mobile.server.hosted.state.running": "Работает",
   "mobile.server.hosted.state.stopped": "Остановлен",
@@ -1642,7 +1644,6 @@ export const messages = {
   "mobile.server.audit.roleMemberAdded": "Участник {member} добавлен в роль {role}",
   "mobile.server.audit.roleMemberRemoved": "Участник {member} удалён из роли {role}",
   "mobile.server.audit.agentLevel": "{agent} для {role}: {change}",
-  // Server settings › Import agents: Grok Bot and Hermes exports (`agent-import-v1`).
   "mobile.server.settings.importAgents": "Импорт агентов",
   "mobile.server.route.import": "Импорт агентов",
   "mobile.server.import.unsupported": "Обновите OpenBot на этом сервере, чтобы импортировать агентов отсюда.",
@@ -1745,7 +1746,6 @@ export const messages = {
   "mobile.server.import.channel": "Канал",
   "mobile.server.import.notImportedTitle": "Не импортировано",
   "mobile.server.import.resultWarnings": "Часть элементов не перенесена",
-  // Server settings › Transfer: the whole server to or from a transfer file (`instance-transfer-v1`).
   "mobile.server.settings.transfer": "Перенос",
   "mobile.server.route.transfer": "Перенос",
   "mobile.server.route.transferExport": "Экспорт",

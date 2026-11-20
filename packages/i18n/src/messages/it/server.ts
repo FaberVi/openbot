@@ -186,6 +186,7 @@ export const messages = {
   "server.hosted.detail.create.copy": "Copio OpenBot sulla macchina",
   "server.hosted.detail.create.key": "Aggiungo una chiave di accesso monouso",
   "server.hosted.detail.start.boot": "Accendo la macchina",
+  "server.hosted.detail.start.restore": "Ripristino dei dati",
   "server.hosted.detail.start.app": "Avvio OpenBot",
   "server.hosted.detail.start.wait": "Attendo la risposta di OpenBot",
   "server.hosted.detail.connect.signIn": "Accedo a tuo nome",
@@ -260,7 +261,7 @@ export const messages = {
     "Usa Tailscale su questo computer. OpenBot espone solo le route dei server collegati sulla tailnet e mette quell'indirizzo nei codici.",
   "server.settings.remoteAgentsCrossNetworkPrepare": "Prepara collegamento tra reti",
   "server.settings.remoteAgentsCrossNetworkReady": "Pronto per un'altra rete",
-  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale attivo — preparazione mancante",
+  "server.settings.remoteAgentsCrossNetworkPending": "Tailscale attivo; prepara non eseguito",
   "server.settings.remoteAgentsCrossNetworkNoTailscale": "Tailscale non connesso",
   "server.settings.identityRefreshFailed": "Impossibile aggiornare l'identità del server.",
   "server.settings.loadFailed": "Impossibile caricare le impostazioni del server.",
@@ -286,9 +287,9 @@ export const messages = {
   "server.role.owner": "Proprietario",
   "server.settings.generalTitle": "Generali",
   "server.settings.generalDescription": "Gestisci nome, logo e preferenze di questo server.",
-
   "server.settings.vaultTitle": "Cassaforte",
-  "server.settings.vaultDescription": "Conserva accessi, carte, contatti e chiavi API per gli agenti di questo server.",
+  "server.settings.vaultDescription":
+    "Salva accessi, carte e dati di contatto che ogni agente su questo server può compilare nelle pagine.",
   "server.settings.membersTitle": "Membri",
   "server.settings.membersDescription": "Pubblica questo server, invita persone e gestisci l'accesso.",
   "server.settings.desktopTitle": "Desktop remoto",
@@ -461,10 +462,9 @@ export const messages = {
   "server.settings.browsingMemoryDescription":
     "Quando controlli il browser di un agente, l'agente impara come funzionano i siti dalle pagine e dai pulsanti che usi. Il testo digitato non viene conservato.",
   "server.settings.browsingMemoryLoadFailed": "Impossibile caricare l'impostazione di navigazione.",
-
-  "server.settings.rolesTitle": "Permessi",
+  "server.settings.rolesTitle": "Autorizzazioni",
   "server.settings.rolesDescription":
-    "Scegli gli agenti che i membri possono usare. Un membro ottiene l’accesso più alto tra Tutti e i propri ruoli. Proprietari e amministratori possono usare tutti gli agenti.",
+    "Scegli gli agenti che i membri possono usare. Un membro riceve l’accesso più alto tra «Tutti» e i propri ruoli. Proprietari e amministratori possono usare tutti gli agenti.",
   "server.settings.auditTitle": "Registro di controllo",
   "server.settings.auditDescription":
     "Modifiche a membri, ruoli e accesso agli agenti di questo server, dalla più recente. L’host conserva le ultime 500 modifiche.",

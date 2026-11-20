@@ -25,7 +25,8 @@ export function browserArgumentsUserMessage(): string {
 /** The text providers read from a browser tool failure, without a wrapper class name. */
 export function browserToolFailureText(error: unknown): string {
   if (isBrowserToolArgumentsError(error)) return error.message;
-  if (error instanceof Error && isBrowserToolArgumentsError(error.cause)) return error.cause.message;
+  const cause = typeof error === "object" && error !== null && "cause" in error ? error.cause : null;
+  if (isBrowserToolArgumentsError(cause)) return cause.message;
   return redactText(String(error));
 }
 
