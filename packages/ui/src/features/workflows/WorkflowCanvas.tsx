@@ -3,6 +3,7 @@ import {
   type StoredFileRow,
   WORKFLOW_GROUP_FIELDS,
   WORKFLOW_PICTURE_TYPES,
+  WORKFLOW_STEP_NAME_FIELD,
   type WorkflowDetail,
   type WorkflowGraph,
   type WorkflowNodeKind,
@@ -42,6 +43,7 @@ import {
   Scan,
   Search,
   SendToBack,
+  Spinner,
   Trash2,
   Type,
   Undo2,
@@ -105,6 +107,7 @@ import { WorkflowZoomMenu } from "./WorkflowZoomMenu";
 import {
   BoardProvider,
   createBoard,
+  customStepName,
   inCanvas,
   isEditable,
   MOD_KEY,
@@ -120,6 +123,7 @@ import {
   type WfnRunStatus,
   type WfnSize,
   type WfnStretch,
+  type WorkflowAgentProgress,
 } from "./workflow-board";
 import { type WorkflowBuild, workflowBuildPlan } from "./workflow-build";
 import { type Camera, type CameraMotion, glideCamera } from "./workflow-camera";
@@ -202,10 +206,12 @@ export interface WorkflowCanvasProps {
   versions: readonly WorkflowVersion[];
   versionPreview?: { versionId: string; graph: WorkflowGraph } | undefined;
   library: readonly WorkflowSummary[];
+  opening?: boolean | undefined;
   readOnly?: boolean | undefined;
   presence?: WorkflowPresence | undefined;
   build?: WorkflowBuild | undefined;
   frame?: "window" | undefined;
+  agentProgress?: ((agentId: string) => WorkflowAgentProgress | undefined) | undefined;
   onGraphChange: (graph: WorkflowGraph) => void;
   onRun: (input: { fromNodeId?: string }) => void;
   onRunStep: (nodeId: string) => void;
@@ -420,9 +426,9 @@ function textFont(node: HTMLElement) {
   return input ? Number.parseFloat(getComputedStyle(input).fontSize) : TEXT_FONT.min;
 }
 
-const DRAG_FIELD = "textarea, input.wfn-input";
+const DRAG_FIELD = "textarea, input.wfn-input, input.wfn-step-name";
 
-const ITEM_FIELD = ".wfn-note-input, .wfn-shape-input, .wfn-text-input";
+const ITEM_FIELD = ".wfn-note-input, .wfn-shape-input, .wfn-text-input, .wfn-step-name";
 
 function caretAt(field: HTMLTextAreaElement | HTMLInputElement, x: number, y: number) {
   const position = document.caretPositionFromPoint?.(x, y);
@@ -573,12 +579,16 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
       return kind ? stretchOf(kind) : "x";
     },
     status: statusOf,
+    progress: (id) => {
+      const agentId = statusOf(id) === "running" ? runIndex().get(id)?.step.agentId : null;
+      return agentId ? props.agentProgress?.(agentId) : undefined;
+    },
     error: (id) => runIndex().get(id)?.error,
     resultsOf: (id) => runIndex().get(id)?.results ?? [],
     duplicate: (id) => duplicateNodes([id]),
     resetSize: (id) => resetSize(id),
     beforeChange: () => commit(),
-    canChange: () => !frozen() && !deleted(),
+    canChange: () => !editsBlocked() && !deleted(),
     root: () => root,
     retry: (id) => {
       const step = stepOf(id);
@@ -713,6 +723,7 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
   let liveCanvas: CanvasSnapshot | undefined;
   const previewing = () => props.versionPreview !== undefined;
   const frozen = () => previewing() || props.readOnly === true;
+  const editsBlocked = () => frozen() || props.opening === true;
   const versionList = () =>
     props.versions.map((version) => ({
       id: version.id,
@@ -957,7 +968,7 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
     untrack(() => props.onGraphChange(next));
   };
   createEffect(
-    () => (frozen() || deleted() ? undefined : graph()),
+    () => (editsBlocked() || deleted() ? undefined : graph()),
     (next) => {
       if (next) send(next);
     },
@@ -1061,7 +1072,7 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
     }
     const merged = asSaved(mergeWorkflowGraphs(before, graphFromSnapshot(capture()), theirs));
     mergeIn(merged);
-    if (!frozen() && !deleted() && !gesturing()) send(merged);
+    if (!editsBlocked() && !deleted() && !gesturing()) send(merged);
   };
   createEffect(
     () => [resetToken(), props.workflow.graph] as const,
@@ -1263,6 +1274,8 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
     return undefined;
   };
   const stepName = (id: string) => {
+    const custom = customStepName(board.field(id, WORKFLOW_STEP_NAME_FIELD));
+    if (custom) return custom;
     const [label = t("workflow.canvas.step"), ...fields] = searchTexts(id);
     const words = fields
       .find((field) => field.trim())
@@ -2149,9 +2162,11 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
     return live()
       .flatMap((node) => {
         const [label = "", ...fields] = searchTexts(node.id);
-        const hit = fields.find((field) => field.toLowerCase().includes(words));
+        const name = customStepName(board.field(node.id, WORKFLOW_STEP_NAME_FIELD));
+        const texts = name ? [name, ...fields] : fields;
+        const hit = texts.find((text) => text.toLowerCase().includes(words));
         if (!hit && !label.toLowerCase().includes(words)) return [];
-        return [{ node, text: hit ?? fields.find((field) => field.trim()) ?? "" }];
+        return [{ node, text: hit ?? texts.find((text) => text.trim()) ?? "" }];
       })
       .slice(0, 8);
   };
@@ -2814,7 +2829,7 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
     const takesFiles = (event: DragEvent) =>
       event.dataTransfer?.types.includes("Files") === true &&
       !deleted() &&
-      !frozen() &&
+      !editsBlocked() &&
       allows("asset") &&
       props.features.uploads === true &&
       !(event.target instanceof Element && event.target.closest("[data-node-id], [data-wfn-portal], .wfn-hud"));
@@ -2832,7 +2847,7 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
     };
     const onPaste = (event: ClipboardEvent) => {
       const key = event.clipboardData?.getData(CLIP_TYPE);
-      if (deleted() || frozen()) return;
+      if (deleted() || editsBlocked()) return;
       if (!key || copied()?.key !== key) {
         pastePictures(event);
         return;
@@ -2871,7 +2886,7 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
       const node = active instanceof HTMLElement ? active.closest<HTMLElement>("[data-node-id]") : null;
       const arrow = ARROWS[event.key];
       const action = (() => {
-        if (frozen()) {
+        if (editsBlocked()) {
           if (inMenu) return undefined;
           if (event.key === "Escape" && following()) return stopFollow;
           if (event.key === "Escape") return previewing() ? closeVersion : undefined;
@@ -3453,7 +3468,12 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
           )}
         </Show>
         <Show when={followedPeer()}>{(peer) => <FollowFrame peer={peer()} />}</Show>
-        <Show when={live().length === 0 && !frozen() && allows("trigger")}>
+        <Show when={props.opening}>
+          <div class="wfn-opening">
+            <Spinner label={t("workflow.canvas.opening")} />
+          </div>
+        </Show>
+        <Show when={live().length === 0 && !frozen() && !props.opening && allows("trigger")}>
           <div class="wfn-empty">
             <span class="wfn-menu-icon wfn-empty-icon" data-kind="trigger" aria-hidden="true">
               <Zap />

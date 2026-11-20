@@ -133,6 +133,7 @@ export interface AcpFlavor {
   mcpServersPerDirectory?: true;
   mcpServersLoadWithSession?: true;
   mcpConnectLimitMs?: number;
+  mcpListLimit?: { ms: number; since: string };
   relayStdioMcpServers?: true | "unconfined";
   mcpServerFailure?(method: string, params: DynamicRecord): AcpMcpServerFailure | null;
   mcpServerName?(name: string): string;
@@ -149,6 +150,7 @@ export interface AcpFlavor {
   signInLostChunk?: RegExp;
   signInUnusable?(error: RequestError): string | null;
   planUsedUpChunk?: RegExp;
+  connectionLostChunk?: RegExp;
   approvedEditSweep?: RegExp;
   sessionMeta?: NewSessionRequest["_meta"];
   workspaceAsAdditionalDirectory?: true;
@@ -220,6 +222,7 @@ export const GROK_ACP_FLAVOR: AcpFlavor = {
   emptyAnswerFailure: noAnswerUnlessPlanOrCompaction,
   mcpServerFailure: grokMcpServerFailure,
   mcpServerName: grokMcpServerName,
+  relayStdioMcpServers: "unconfined",
   restoreFailure: (error) =>
     error instanceof RequestError && error.code === -32603 && isRecord(error.data) && error.data.code === "FS_NOT_FOUND"
       ? "confirm-missing"
@@ -357,6 +360,14 @@ export const HERMES_ACP_FLAVOR: AcpFlavor = {
   catalogAsMcpTools: true,
 };
 
+const CURSOR_STREAM_FAILURE = /\bRetriableError: \[(?:canceled|aborted|unavailable|deadline_exceeded)\] /u;
+
+function cursorTurnFailure(error: unknown, detail: string): string {
+  return CURSOR_STREAM_FAILURE.test(errorText(error))
+    ? sourceText("error.provider.acpServerLost", { provider: agentProviderName("cursor") })
+    : detail;
+}
+
 export const CURSOR_ACP_FLAVOR: AcpFlavor = {
   sessionNotFound: (error, sessionId) =>
     error.code === -32602 ? isRecord(error.data) && error.data.message === `Session "${sessionId}" not found` : null,
@@ -368,6 +379,9 @@ export const CURSOR_ACP_FLAVOR: AcpFlavor = {
       ? sourceText("error.provider.cursorSignInUnusable")
       : null,
   planUsedUpChunk: /^(?:\n\nUpgrade your plan to continue|\s*Add a payment method to continue\.?\s*)$/u,
+  connectionLostChunk: /^\s*Error: RetriableError: \[(?:canceled|aborted|unavailable|deadline_exceeded)\] [^\n]*\s*$/u,
+  turnFailure: cursorTurnFailure,
+  failureCause: (error) => (CURSOR_STREAM_FAILURE.test(errorText(error)) ? "network" : null),
   processWideModel: true,
   mcpServersLoadWithSession: true,
   enableMcpServers: enableCursorMcpServers,
@@ -386,6 +400,7 @@ export const KIMI_ACP_FLAVOR: AcpFlavor = {
   authRequiredSignsOut: true,
   emptyAnswerFailure: noAnswerUnlessPlanOrCompaction,
   mcpToolsFixedAtStart: true,
+  turnStallMs: 12 * 60_000,
 };
 
 export const DEVIN_ACP_FLAVOR: AcpFlavor = {

@@ -93,6 +93,7 @@ interface StoredMessage {
         serverName: string;
       };
   senderMember?: ConversationMessageSender;
+  requesterIds?: string[];
   text: string;
   attachments: StoredAttachment[];
   voiceRecording?: StoredAttachment;
@@ -202,6 +203,7 @@ interface EnqueueInput {
   senderTaskId?: string;
   sender: StoredMessage["sender"];
   senderMember?: ConversationMessageSender;
+  requesterIds?: readonly string[];
   recipientAgentIds: string[];
   text: string;
   replyToMessageId?: string | null;
@@ -657,6 +659,9 @@ export class MailboxStore {
         id: messageId,
         sender: storedSender(input.sender),
         ...(input.sender.kind === "user" && input.senderMember ? { senderMember: input.senderMember } : {}),
+        ...(input.sender.kind === "agent" && input.requesterIds?.length
+          ? { requesterIds: [...input.requesterIds] }
+          : {}),
         text: rewriteAttachmentReferences(text, (reference) => {
           const attachment = committedByDraftId.get(reference.attachmentId);
           return attachment ? { attachmentId: attachment.id, name: attachment.name } : null;
@@ -1099,6 +1104,37 @@ export class MailboxStore {
     return this.#deliveriesFor(agentId).some(
       (delivery) => isActiveDelivery(delivery) && this.#taskIdOf(delivery, messages) === taskId,
     );
+  }
+
+  taskAwaitsAgent(agentId: string, taskId: string): boolean {
+    const messages = this.#messagesById();
+    return this.#deliveriesFor(agentId).some((delivery) => {
+      if (!isActiveDelivery(delivery)) return false;
+      const message = messages.get(delivery.messageId);
+      return message?.taskId === taskId && message.sender.kind === "agent";
+    });
+  }
+
+  awaitsTeammate(agentId: string, taskId: string | null): boolean {
+    const messages = this.#messagesById();
+    return this.#state.deliveries.some((delivery) => {
+      if (!isActiveDelivery(delivery) || delivery.recipientAgentId === agentId) return false;
+      const request = messages.get(delivery.messageId);
+      return (
+        request?.sender.kind === "agent" &&
+        request.sender.agentId === agentId &&
+        request.expectsReply !== false &&
+        (request.senderTaskId ?? null) === taskId
+      );
+    });
+  }
+
+  taskRequesterIds(taskId: string): string[] {
+    const ids = new Set<string>();
+    for (const message of this.#state.messages)
+      if (message.taskId === taskId && message.sender.kind === "agent")
+        for (const id of message.requesterIds ?? []) ids.add(id);
+    return [...ids];
   }
 
   deleteTaskMessages = Effect.fn("MailboxStore.deleteTaskMessages")(function* (
@@ -2231,6 +2267,10 @@ export class MailboxStore {
     return this.#state.messages.find((message) => message.id === messageId)?.senderMember;
   }
 
+  requesterIds(messageId: string): readonly string[] {
+    return this.#state.messages.find((message) => message.id === messageId)?.requesterIds ?? [];
+  }
+
   hasReplyFrom(agentId: string, messageId: string): boolean {
     return this.#state.messages.some(
       (message) =>
@@ -2262,7 +2302,7 @@ export class MailboxStore {
     );
   }
 
-  repeatsHandledReply(deliveryId: string): boolean {
+  answersHandledRequest(deliveryId: string): boolean {
     const delivery = this.#state.deliveries.find((candidate) => candidate.id === deliveryId);
     if (!delivery) return false;
     const messages = this.#messagesById();
@@ -2271,11 +2311,25 @@ export class MailboxStore {
     const deliveries = this.#deliveriesFor(delivery.recipientAgentId);
     const position = deliveries.indexOf(delivery);
     if (position <= 0) return false;
+    const failedRequestNotes = this.#failedRequestNoteIds();
     return deliveries.slice(0, position).some((earlier) => {
       if (earlier.status !== "completed" || earlier.turnId === null || earlier.turnId === delivery.turnId) return false;
       const answer = messages.get(earlier.messageId);
-      return answer !== undefined && isAnswer(answer) && sameAnswer(answer, reply);
+      return (
+        answer !== undefined &&
+        isAnswer(answer) &&
+        !failedRequestNotes.has(answer.id) &&
+        answersSameRequest(answer, reply)
+      );
     });
+  }
+
+  #failedRequestNoteIds(): Set<string> {
+    return new Set(
+      Object.entries(this.#state.idempotency)
+        .filter(([key]) => key.startsWith(FAILED_REQUEST_KEY_PREFIX))
+        .map(([, messageId]) => messageId),
+    );
   }
 
   hasSentResultFor(deliveryId: string): boolean {
@@ -2318,6 +2372,7 @@ export class MailboxStore {
     const taskId = answerTaskId && taskOpen(answerTaskId) ? answerTaskId : undefined;
     yield* this.enqueue({
       sender: { kind: "agent", agentId: teammateId },
+      ...(request.requesterIds ? { requesterIds: request.requesterIds } : {}),
       recipientAgentIds: [requesterId],
       text: [
         "Status: blocked",
@@ -2993,22 +3048,25 @@ export class MailboxStore {
     }
   }, Effect.uninterruptible).bind(this);
 
-  requeueResultAfterRestart = Effect.fn("MailboxStore.requeueResultAfterRestart")(function* (
+  requeueAfterRestart = Effect.fn("MailboxStore.requeueAfterRestart")(function* (
     this: MailboxStore,
     deliveryId: string,
+    routineRetry: boolean,
   ): Effect.fn.Return<boolean, StoredStateFailure> {
     const delivery = this.#state.deliveries.find((candidate) => candidate.id === deliveryId);
     const message = delivery && this.#state.messages.find((candidate) => candidate.id === delivery.messageId);
     const key = `${RESTARTED_RESULT_KEY_PREFIX}${deliveryId}`;
+    const teammateResult =
+      message?.sender.kind === "agent" &&
+      message.sender.agentId !== delivery?.recipientAgentId &&
+      message.replyToMessageId !== null &&
+      message.expectsReply === false &&
+      !message.channelId;
     if (
       !delivery ||
       !message ||
       (delivery.status !== "starting" && delivery.status !== "running") ||
-      message.sender.kind !== "agent" ||
-      message.sender.agentId === delivery.recipientAgentId ||
-      message.replyToMessageId === null ||
-      message.expectsReply !== false ||
-      message.channelId ||
+      !(routineRetry ? message.sender.kind === "routine" : teammateResult) ||
       this.#state.idempotency[key] !== undefined
     )
       return false;
@@ -3868,6 +3926,7 @@ function isStoredMessage(value: unknown): value is StoredMessage {
         isString(value.sender.routineName) &&
         isString(value.sender.scheduledFor))) &&
     (value.senderMember === undefined || isConversationMessageSender(value.senderMember)) &&
+    (value.requesterIds === undefined || (Array.isArray(value.requesterIds) && value.requesterIds.every(isString))) &&
     isString(value.text) &&
     Array.isArray(value.attachments) &&
     value.attachments.every(isStoredAttachment) &&
@@ -3983,15 +4042,9 @@ function isAnswer(
   return message.sender.kind === "agent" && message.replyToMessageId !== null && message.expectsReply === false;
 }
 
-function sameAnswer(
+function answersSameRequest(
   first: StoredMessage & { sender: { kind: "agent"; agentId: string } },
   second: StoredMessage & { sender: { kind: "agent"; agentId: string } },
 ): boolean {
-  const files = (message: StoredMessage) => message.attachments.map((attachment) => attachment.sha256).join("\n");
-  return (
-    first.sender.agentId === second.sender.agentId &&
-    first.replyToMessageId === second.replyToMessageId &&
-    first.text.trim() === second.text.trim() &&
-    files(first) === files(second)
-  );
+  return first.sender.agentId === second.sender.agentId && first.replyToMessageId === second.replyToMessageId;
 }

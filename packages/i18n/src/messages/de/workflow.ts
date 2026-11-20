@@ -65,6 +65,8 @@ export const messages = {
   "workflow.node.retry": "Wiederholen",
   "workflow.node.failed": "Fehlgeschlagen",
   "workflow.node.runTime": "{seconds} s",
+  "workflow.node.name": "Schrittname",
+  "workflow.node.stepsDone": { one: "{count} Schritt fertig", other: "{count} Schritte fertig" },
   "workflow.node.choice": "{name}: {value}",
   "workflow.node.place.channel": "Kanal",
   "workflow.node.place.choose": "Kanal wählen",
@@ -449,6 +451,7 @@ export const messages = {
 
   "workflow.canvas.label": "Workflow-Arbeitsfläche: {name}",
   "workflow.canvas.untitled": "Unbenannter Workflow",
+  "workflow.canvas.opening": "Workflow wird geöffnet…",
   "workflow.canvas.copyOf": "{name} Kopie",
   "workflow.canvas.step": "Schritt",
   "workflow.canvas.kind.note": "Haftnotiz",

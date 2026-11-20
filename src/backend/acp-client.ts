@@ -177,6 +177,8 @@ const ACP_REPEATED_TOOL_FAILURES = 5;
 
 const ACP_STEER_ANSWER_MS = 3_000;
 
+const ACP_MCP_LIST_MARGIN_MS = 1_000;
+
 const ACP_THROWAWAY_DELETE_MS = 3_000;
 
 const ACP_BACKGROUND_POLL_MS = 2_000;
@@ -279,6 +281,7 @@ interface AcpThread {
   configOptions: SessionConfigOption[];
   currentModelId: string | null;
   mcp: LocalMcpSession;
+  mcpListed: boolean;
   relays: Effect.Effect<void>;
   relayed: RelayedMcpServers;
   activeTurn: AcpTurn | null;
@@ -881,10 +884,17 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     tool: string,
     args: McpToolArguments,
   ): Effect.Effect<RelayedMcpToolOutcome | null> {
+    return this.#relayFor(externalThreadId, config)?.callTool(tool, args) ?? Effect.succeed(null);
+  }
+
+  relaysMcpServer(externalThreadId: string, config: McpServerConfig): boolean {
+    return this.#relayFor(externalThreadId, config) !== undefined;
+  }
+
+  #relayFor(externalThreadId: string, config: McpServerConfig): StdioMcpRelay | undefined {
     const thread = this.#threads.get(externalThreadId);
-    if (!thread || thread.relayed.byName.size === 0) return Effect.succeed(null);
-    const name = acpMcpServerName(config, thread.relayed.own, this.#flavor.mcpServerName);
-    return thread.relayed.byName.get(name)?.callTool(tool, args) ?? Effect.succeed(null);
+    if (!thread || thread.relayed.byName.size === 0) return undefined;
+    return thread.relayed.byName.get(acpMcpServerName(config, thread.relayed.own, this.#flavor.mcpServerName));
   }
 
   readonly releaseThread = Effect.fn("AcpAgentClient.releaseThread")(function* (
@@ -1522,6 +1532,20 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     );
   }
 
+  #listedInTime(mcp: LocalMcpSession, sentAt: number, waitedMs = 0): boolean {
+    const limit = this.#flavor.mcpListLimit;
+    const version = this.#initialization?.agentInfo?.version;
+    if (
+      !limit ||
+      mcp.servers.length === 0 ||
+      typeof version !== "string" ||
+      !isVersion(version) ||
+      compareReleases(version, limit.since) < 0
+    )
+      return true;
+    return mcp.listedWithin(sentAt, Math.max(limit.ms + ACP_MCP_LIST_MARGIN_MS, waitedMs));
+  }
+
   get #sessionProcesses(): boolean {
     if (this.#flavor.sessionProcesses) return true;
     const before = this.#flavor.sessionProcessesBefore;
@@ -1726,6 +1750,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
               configOptions = response.configOptions ?? [];
               currentModelId = currentModelFromSessionSetup(response);
             }
+            const openedAt = Date.now();
             const connectLimit = this.#flavor.mcpConnectLimitMs;
             if (connectLimit !== undefined && this.#supportsSessionResume && mcp.dropped(sentAt, connectLimit)) {
               this.emit("diagnostic", `${this.#label} did not load OpenBot's tools in time. The session opens again.`);
@@ -1754,6 +1779,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
               configOptions,
               currentModelId,
               mcp,
+              mcpListed: this.#listedInTime(mcp, sentAt, openedAt - sentAt),
               relays: closeRelays ?? Effect.void,
               relayed: relayedServers,
               activeTurn: null,
@@ -2429,7 +2455,13 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     params: unknown,
   ): Effect.fn.Return<void, ProviderClientOperationError> {
     try {
-      const send = () => this.#sendPrompt(thread, turn, prompt, params);
+      let sentAt = 0;
+      let promptedAgain = false;
+      const send = () =>
+        Effect.suspend(() => {
+          sentAt = Date.now();
+          return this.#sendPrompt(thread, turn, prompt, params);
+        });
       let sent = yield* send();
       if (
         Result.isFailure(sent) &&
@@ -2468,6 +2500,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
       let staleWake = false;
       for (;;) {
         for (let steer = turn.steerReplies.shift(); steer; steer = turn.steerReplies.shift()) {
+          promptedAgain = true;
           const run = this.#flavor.promptRun?.(response);
           if (run === undefined) this.#reportPromptUsage(thread, turn, response);
           const reply = yield* Deferred.await(steer);
@@ -2489,6 +2522,7 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
         if (thread.activeTurn !== turn || turn.completing) return;
         turn.lastActivityAt = Date.now();
         staleWake = this.#backgroundCommands(turn) === running;
+        promptedAgain = true;
       }
       this.#reportPromptUsage(thread, turn, response);
       const emptyAnswerFailure =
@@ -2554,6 +2588,19 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
             turn.sessionLost = sdkHarness.sessionLost?.test(detail) === true;
           }
         }
+      }
+      if (!thread.mcpListed) thread.mcpListed = this.#listedInTime(thread.mcp, sentAt);
+      if (
+        !thread.mcpListed &&
+        !promptedAgain &&
+        !turn.wake &&
+        !turn.providerError &&
+        !turn.stopped &&
+        response.stopReason === "end_turn"
+      ) {
+        turn.failureCause = "unknown";
+        turn.providerError = sourceText("error.provider.acpToolsNotLoaded", { provider: this.#label });
+        thread.needsResume = true;
       }
       const status =
         turn.stopped || response.stopReason === "cancelled"
@@ -2648,7 +2695,8 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
       turn.providerError !== null ||
       turn.sdkFailureAt !== null ||
       this.#flavor.sdkHarness?.answerIsFailure.test(turn.text) === true;
-    if (!this.#flavor.wakesAfterPromptEnds || !this.#steersByPrompt || turn.stopped || failed) return "";
+    if (!this.#flavor.wakesAfterPromptEnds || !this.#steersByPrompt || turn.stopped || turn.quietNoUpdate || failed)
+      return "";
     return [...turn.toolItems.values()]
       .filter(
         (item) =>
@@ -2784,11 +2832,13 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
     params: unknown,
   ): Effect.fn.Return<void, ProviderClientOperationError> {
     const model = thread.currentModelId;
+    const resumedAt = Date.now();
     const restored = yield* this.#restoreSessionEffect(
       () => this.#sessionConnection(thread),
       { sessionId: thread.id, ...restore },
       "resume",
     );
+    if (!thread.mcpListed) thread.mcpListed = this.#listedInTime(thread.mcp, resumedAt, Date.now() - resumedAt);
     thread.restore = restore;
     thread.configOptions = restored.configOptions ?? thread.configOptions;
     thread.currentModelId = currentModelFromSessionSetup(restored) ?? thread.currentModelId;
@@ -3094,6 +3144,12 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
         turn.providerError = sourceText("error.provider.acpPlanUsedUp", { provider: this.#label });
         return;
       }
+      if (this.#flavor.connectionLostChunk?.test(update.content.text)) {
+        turn.receivedOutput = true;
+        turn.failureCause = "network";
+        turn.providerError = sourceText("error.provider.acpServerLost", { provider: this.#label });
+        return;
+      }
       const quota = this.#flavor.sdkHarness?.quota(update.content.text) ?? null;
       if (quota !== null) {
         turn.receivedOutput = true;
@@ -3117,6 +3173,10 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
         this.#appendThought(thread, turn, error);
         this.#completeThought(thread, turn);
         return;
+      }
+      if (turn.failureCause === "network" && update.content.text.trim()) {
+        turn.failureCause = null;
+        turn.providerError = null;
       }
       if (update.content.text) this.#completeThought(thread, turn);
       const messageId = contentMessageId(update);

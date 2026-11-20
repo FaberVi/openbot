@@ -62,9 +62,11 @@ export interface TeamHttpCodecOptions {
   videoGeneration?: boolean;
   remoteSender?: boolean;
   usageTertiary?: boolean;
+  usageGroups?: boolean;
   agentPendingRuntime?: boolean;
   memoryChanges?: boolean;
   queueHold?: boolean;
+  queueHoldSignIn?: boolean;
 }
 
 type DecodedRequest =

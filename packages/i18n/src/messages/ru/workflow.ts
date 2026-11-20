@@ -77,6 +77,13 @@ export const messages = {
   "workflow.node.retry": "Повторить",
   "workflow.node.failed": "Ошибка",
   "workflow.node.runTime": "{seconds} с",
+  "workflow.node.name": "Название шага",
+  "workflow.node.stepsDone": {
+    one: "{count} шаг готов",
+    few: "{count} шага готово",
+    many: "{count} шагов готово",
+    other: "{count} шага готово",
+  },
   "workflow.node.choice": "{name}: {value}",
   "workflow.node.place.channel": "Канал",
   "workflow.node.place.choose": "Выберите канал",
@@ -470,6 +477,7 @@ export const messages = {
 
   "workflow.canvas.label": "Холст рабочего процесса: {name}",
   "workflow.canvas.untitled": "Рабочий процесс без названия",
+  "workflow.canvas.opening": "Открытие рабочего процесса…",
   "workflow.canvas.copyOf": "{name} (копия)",
   "workflow.canvas.step": "Шаг",
   "workflow.canvas.kind.note": "Стикер",

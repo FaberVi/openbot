@@ -249,6 +249,7 @@ export interface AgentProfile {
   allowAutomation?: boolean | undefined;
   allowNewChat?: boolean | undefined;
   quickAcknowledgement?: boolean | undefined;
+  memory?: boolean | undefined;
   ownBrowserSession?: boolean | undefined;
   browserProfileId?: string | undefined;
   fastMode?: boolean | undefined;

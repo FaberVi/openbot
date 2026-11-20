@@ -329,7 +329,6 @@ export const messages = {
   "routine.webhook.giveSecretConfirm": "Dai segreto",
   "routine.webhook.giveSecretFailed": "Impossibile dare il segreto di firma a {name}.",
   "routine.webhook.secretGiven": "{name} ha il nuovo segreto di firma.",
-  "routine.webhook.statusFailed": "Impossibile verificare se l'host è connesso al relay.",
   "routine.webhook.stepDone": "Fatto",
   "routine.webhook.stepUrl": "Copia l'endpoint nel servizio mittente",
   "routine.webhook.stepUrlHint": "Il mittente invia una richiesta POST con un corpo JSON di al massimo 64 KiB.",

@@ -4,6 +4,7 @@ import { AGENT_ACCESS_CODECS } from "./agent-access-v1";
 import { AGENT_ACTIVE_QUEUES_CODECS } from "./agent-active-queues-v1";
 import { AGENT_ADMIN_CODECS } from "./agent-admin-v1";
 import { AGENT_BACKUP_MODELS_CODECS } from "./agent-backup-models-v1";
+import { AGENT_BUILTIN_MEMORY_CODECS } from "./agent-builtin-memory-v1";
 import { AGENT_COLORS_CODECS } from "./agent-colors-v1";
 import { AGENT_DEFAULTS_CODECS } from "./agent-defaults-v1";
 import { AGENT_FAST_MODE_CODECS } from "./agent-fast-mode-v1";
@@ -85,6 +86,7 @@ import { INSTANCE_TRANSFER_FULL_COPY_CODECS } from "./instance-transfer-full-cop
 import { INSTANCE_TRANSFER_CODECS } from "./instance-transfer-v1";
 import { LIBRARY_FOLDERS_CODECS } from "./library-folders-v1";
 import { LIVE_ACTIVITY_PUSH_CODECS } from "./live-activity-push-v1";
+import { LIVE_VOICE_ACCOUNT_CODECS } from "./live-voice-account-v1";
 import { LIVE_VOICE_CODECS } from "./live-voice-v1";
 import { LOCAL_SERVERS_CODECS } from "./local-servers-v1";
 import { MACHINE_RESOURCES_CODECS } from "./machine-resources-v1";
@@ -99,6 +101,7 @@ import { MODEL_VISIBILITY_CODECS } from "./model-visibility-v1";
 import { ONEPASSWORD_CONNECTOR_CODECS } from "./onepassword-connector-v1";
 import { PASSWORD_MANAGERS_CODECS } from "./password-managers-v1";
 import { PENDING_APPROVAL_CODECS } from "./pending-approval-v1";
+import { PENDING_PROMPTS_CODECS } from "./pending-prompts-v1";
 import { PHONE_FEEDBACK_CODECS } from "./phone-feedback-v1";
 import { PROMPT_CACHE_TTL_CODECS } from "./prompt-cache-ttl-v1";
 import { PROVIDER_ACCOUNT_CODE_CODECS } from "./provider-account-code-v1";
@@ -113,6 +116,7 @@ import { PROVIDER_DETECTION_CODECS } from "./provider-detection-v1";
 import { PROVIDER_ENVIRONMENT_CODECS } from "./provider-environment-v1";
 import { PROVIDER_HOST_SIGN_IN_CODECS } from "./provider-host-sign-in-v1";
 import { PROVIDER_MODEL_SOURCE_CODECS } from "./provider-model-source-v1";
+import { PROVIDER_SIGN_IN_RELAY_V2_CODECS } from "./provider-sign-in-relay-v2";
 import { PROVIDER_SIGN_OUT_CODECS } from "./provider-sign-out-v1";
 import { PROVIDER_USAGE_RESET_CODECS } from "./provider-usage-reset-v1";
 import { PROVIDER_USE_CODECS } from "./provider-use-v1";
@@ -270,6 +274,7 @@ const CODECS: ReadonlyMap<string, OptionalRouteCodec> = new Map([
   ...AGENT_QUEUE_TASK_CODECS,
   ...AGENT_WAITS_CODECS,
   ...PENDING_APPROVAL_CODECS,
+  ...PENDING_PROMPTS_CODECS,
   ...PHONE_FEEDBACK_CODECS,
   ...MESSAGE_PINS_CODECS,
   ...ROUTINE_FLOWS_CODECS,
@@ -291,6 +296,7 @@ const CODECS: ReadonlyMap<string, OptionalRouteCodec> = new Map([
   ...PROVIDER_USAGE_RESET_CODECS,
   ...USAGE_CREDITS_CODECS,
   ...PROVIDER_SIGN_OUT_CODECS,
+  ...PROVIDER_SIGN_IN_RELAY_V2_CODECS,
   ...ONEPASSWORD_CONNECTOR_CODECS,
   ...BITWARDEN_CONNECTOR_CODECS,
   ...AGENT_ACCESS_CODECS,
@@ -309,6 +315,7 @@ const CODECS: ReadonlyMap<string, OptionalRouteCodec> = new Map([
   ...AGENT_NOTIFICATION_LEVELS_CODECS,
   ...SIDEBAR_PINS_CODECS,
   ...AGENT_PLAN_CARD_CODECS,
+  ...AGENT_BUILTIN_MEMORY_CODECS,
   ...AGENT_DEFAULTS_CODECS,
   ...BROWSER_USER_CONTROL_CODECS,
   ...BROWSER_TEACH_CODECS,
@@ -324,6 +331,7 @@ const CODECS: ReadonlyMap<string, OptionalRouteCodec> = new Map([
   ...AGENT_THREAD_PAGES_CODECS,
   ...SIDE_QUESTION_CODECS,
   ...LIVE_VOICE_CODECS,
+  ...LIVE_VOICE_ACCOUNT_CODECS,
   ...BROWSER_PROFILES_CODECS,
   ...WORKFLOWS_CODECS,
   ...CRM_CODECS,

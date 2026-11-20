@@ -30,6 +30,8 @@ export const messages = {
   "settings.movingFaces.title": "Volti degli agenti animati",
   "settings.movingFaces.description":
     "I volti degli agenti sbattono le palpebre e si muovono. All’inizio sono fermi su un computer senza GPU.",
+  "settings.startupAnimation.title": "Animazione di avvio",
+  "settings.startupAnimation.description": "Mostra l’animazione degli agenti mentre OpenBot si apre.",
   "settings.logoColor.title": "Colore del logo",
   "settings.logoColor.description": "Mostrato nel Dock, nella barra delle applicazioni e nella Dynamic Island.",
   "settings.logoColor.buildNote":
@@ -59,6 +61,7 @@ export const messages = {
   "settings.chatBackdrop.sunset": "Tramonto rétro",
   "settings.chatBackdrop.snowfall": "Nevicata",
   "settings.chatBackdrop.fireflies": "Lucciole",
+  "settings.chatBackdrop.coast": "Costa al neon",
   "settings.chatBackdrop.upload": "Carica immagine…",
   "settings.chatBackdrop.uploadRefused": "Usa un’immagine PNG, JPEG, GIF, WebP o AVIF di 20 MB al massimo.",
   "settings.chatBackdrop.saveFailed": "Lo sfondo non è stato salvato.",
@@ -783,6 +786,10 @@ export const messages = {
   "settings.voice.server.probeFailed": "Impossibile connettersi al server vocale.",
   "settings.voice.server.saveFailed": "Impossibile salvare il server vocale.",
   "settings.voice.server.removeFailed": "Impossibile rimuovere il server vocale.",
+  "settings.voice.live.account": "Account",
+  "settings.voice.live.accountAutomatic": "Automatico",
+  "settings.voice.live.accountDescription":
+    "L'account ChatGPT che usa la voce dal vivo. Scegli un account il cui piano include la voce.",
   "settings.transfer.title": "Sposta questo server su un altro computer",
   "settings.transfer.lede": "I tuoi agenti, le loro skill, routine, memorie e file vanno in un unico file.",
   "settings.transfer.flow.label": "Come funziona un trasferimento",

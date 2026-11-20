@@ -62,6 +62,8 @@ export const messages = {
   "workflow.node.retry": "다시 시도",
   "workflow.node.failed": "실패",
   "workflow.node.runTime": "{seconds}초",
+  "workflow.node.name": "단계 이름",
+  "workflow.node.stepsDone": { other: "{count}단계 완료" },
   "workflow.node.choice": "{name}: {value}",
   "workflow.node.place.channel": "채널",
   "workflow.node.place.choose": "채널 선택",
@@ -444,6 +446,7 @@ export const messages = {
 
   "workflow.canvas.label": "워크플로 캔버스: {name}",
   "workflow.canvas.untitled": "제목 없는 워크플로",
+  "workflow.canvas.opening": "워크플로 여는 중…",
   "workflow.canvas.copyOf": "{name} 사본",
   "workflow.canvas.step": "단계",
   "workflow.canvas.kind.note": "스티커 메모",

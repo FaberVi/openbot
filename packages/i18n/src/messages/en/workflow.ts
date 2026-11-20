@@ -64,6 +64,8 @@ export const messages = defineMessages("workflow", {
   "workflow.node.retry": "Retry",
   "workflow.node.failed": "Failed",
   "workflow.node.runTime": "{seconds} s",
+  "workflow.node.name": "Step name",
+  "workflow.node.stepsDone": { one: "{count} step done", other: "{count} steps done" },
   "workflow.node.choice": "{name}: {value}",
   "workflow.node.place.channel": "Channel",
   "workflow.node.place.choose": "Choose channel",
@@ -449,6 +451,7 @@ export const messages = defineMessages("workflow", {
 
   "workflow.canvas.label": "Workflow canvas: {name}",
   "workflow.canvas.untitled": "Untitled workflow",
+  "workflow.canvas.opening": "Opening workflow…",
   "workflow.canvas.copyOf": "{name} copy",
   "workflow.canvas.step": "Step",
   "workflow.canvas.kind.note": "Sticky note",

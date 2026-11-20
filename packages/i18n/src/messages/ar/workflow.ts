@@ -83,6 +83,15 @@ export const messages = {
   "workflow.node.retry": "إعادة المحاولة",
   "workflow.node.failed": "فشل",
   "workflow.node.runTime": "{seconds} s",
+  "workflow.node.name": "اسم الخطوة",
+  "workflow.node.stepsDone": {
+    zero: "لم تكتمل أي خطوة",
+    one: "اكتملت خطوة واحدة",
+    two: "اكتملت خطوتان",
+    few: "اكتملت {count} خطوات",
+    many: "اكتملت {count} خطوة",
+    other: "اكتملت {count} خطوة",
+  },
   "workflow.node.choice": "{name}: {value}",
   "workflow.node.place.channel": "القناة",
   "workflow.node.place.choose": "اختيار قناة",
@@ -481,6 +490,7 @@ export const messages = {
 
   "workflow.canvas.label": "لوحة سير العمل: {name}",
   "workflow.canvas.untitled": "سير عمل بلا عنوان",
+  "workflow.canvas.opening": "جارٍ فتح سير العمل…",
   "workflow.canvas.copyOf": "نسخة من {name}",
   "workflow.canvas.step": "خطوة",
   "workflow.canvas.kind.note": "ملاحظة لاصقة",

@@ -65,6 +65,8 @@ export const messages = {
   "workflow.node.retry": "Tekrar dene",
   "workflow.node.failed": "Başarısız",
   "workflow.node.runTime": "{seconds} sn",
+  "workflow.node.name": "Adım adı",
+  "workflow.node.stepsDone": { one: "{count} adım bitti", other: "{count} adım bitti" },
   "workflow.node.choice": "{name}: {value}",
   "workflow.node.place.channel": "Kanal",
   "workflow.node.place.choose": "Kanal seç",
@@ -448,6 +450,7 @@ export const messages = {
 
   "workflow.canvas.label": "İş akışı tuvali: {name}",
   "workflow.canvas.untitled": "Adsız iş akışı",
+  "workflow.canvas.opening": "İş akışı açılıyor…",
   "workflow.canvas.copyOf": "{name} kopyası",
   "workflow.canvas.step": "Adım",
   "workflow.canvas.kind.note": "Yapışkan not",

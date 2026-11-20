@@ -65,6 +65,8 @@ export const messages = {
   "workflow.node.retry": "Reintentar",
   "workflow.node.failed": "Fallido",
   "workflow.node.runTime": "{seconds} s",
+  "workflow.node.name": "Nombre del paso",
+  "workflow.node.stepsDone": { one: "{count} paso hecho", other: "{count} pasos hechos" },
   "workflow.node.choice": "{name}: {value}",
   "workflow.node.place.channel": "Canal",
   "workflow.node.place.choose": "Elegir canal",
@@ -449,6 +451,7 @@ export const messages = {
 
   "workflow.canvas.label": "Lienzo del flujo de trabajo: {name}",
   "workflow.canvas.untitled": "Flujo de trabajo sin título",
+  "workflow.canvas.opening": "Abriendo flujo de trabajo…",
   "workflow.canvas.copyOf": "Copia de {name}",
   "workflow.canvas.step": "Paso",
   "workflow.canvas.kind.note": "Nota adhesiva",
