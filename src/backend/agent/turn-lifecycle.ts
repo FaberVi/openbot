@@ -375,6 +375,7 @@ export class TurnLifecycle {
       carriedHistory: boolean;
       workedBesidesReaction: boolean;
       compacted: boolean;
+      startedBackgroundWork: boolean;
       narration: string | null;
       openTools: Set<string>;
       failureReports: Set<string>;
@@ -860,11 +861,12 @@ export class TurnLifecycle {
     if (taskId !== null) this.#hooks.taskFailed(taskId, failover.message);
   }
 
-  #holdCodexNoAnswer(agentId: string, threadId: string, turnId: string, source: AgentClient): boolean {
+  #holdNoAnswer(agentId: string, threadId: string, turnId: string, source: AgentClient): boolean {
     const running = this.#runningTurns.get(turnId);
     if (
-      source.provider !== "codex" ||
+      (source.provider !== "codex" && source.provider !== "claude") ||
       running === undefined ||
+      (running.startedBackgroundWork && this.#waitingThreads.has(threadId)) ||
       running.compacted ||
       this.#turnErrors.has(turnId) ||
       this.#failoverTurns.has(turnId) ||
@@ -895,6 +897,14 @@ export class TurnLifecycle {
       this.#answerWithNarration(messages, turnId, running.narration)
     ) {
       logger.info("A turn's last narration became its answer.", { agentId, turnId, provider: source.provider });
+      return false;
+    }
+    if (deliveries.every(({ delivery }) => this.#mailbox.repeatsHandledReply(delivery.id))) {
+      logger.info("A turn for a repeated teammate result ended quietly.", {
+        agentId,
+        turnId,
+        provider: source.provider,
+      });
       return false;
     }
     if (running.acted) {
@@ -1164,6 +1174,7 @@ export class TurnLifecycle {
           carriedHistory: false,
           workedBesidesReaction: false,
           compacted: false,
+          startedBackgroundWork: false,
           narration: null,
           openTools: new Set(),
           failureReports: new Set(),
@@ -1323,7 +1334,7 @@ export class TurnLifecycle {
         const turnId = getString(turn, "id");
         if (!turnId) return;
         const reported = getString(turn, "status") ?? "completed";
-        const noAnswer = reported === "completed" && this.#holdCodexNoAnswer(agentId, threadId, turnId, source);
+        const noAnswer = reported === "completed" && this.#holdNoAnswer(agentId, threadId, turnId, source);
         const status =
           ((reported === "failed" && this.#quietEmptyAnswers.has(turnId)) ||
             (reported === "interrupted" && this.#quietStops.has(turnId))) &&
@@ -1393,6 +1404,9 @@ export class TurnLifecycle {
       case "openbot/background-work": {
         if (!threadId || !agentId) return;
         const runs = isRecord(params) && params.running === true;
+        if (runs)
+          for (const turn of this.#runningTurns.values())
+            if (turn.threadId === threadId && turn.client === source) turn.startedBackgroundWork = true;
         if (runs === this.#waitingThreads.has(threadId)) return;
         if (runs) this.#waitingThreads.set(threadId, { agentId, client: source, since: Date.now() });
         else this.#waitingThreads.delete(threadId);
