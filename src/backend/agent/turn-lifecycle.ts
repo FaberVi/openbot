@@ -54,6 +54,7 @@ import {
   MESSAGING_LANE,
   type UsageLimitContinuation,
 } from "../mailbox-store";
+import { perfCount } from "../perf-probe-hooks";
 import {
   type AppServerNotification,
   type DynamicToolCallParams,
@@ -851,9 +852,9 @@ export class TurnLifecycle {
     this.#turnCauses.set(turnId, context.causeCode);
   }
 
-  #showFailoverError(agentId: string, threadId: string, failover: HeldProviderError): void {
+  #showFailoverError(agentId: string, threadId: string, failover: HeldProviderError, showQuiet = false): void {
     const taskId = this.#taskForThread(agentId, threadId);
-    if (taskId === null && !failover.quiet) {
+    if (taskId === null && (!failover.quiet || showQuiet)) {
       this.#hooks.emitError("agent_error", failover.message, agentId, failover.context, failover.link);
       return;
     }
@@ -899,8 +900,8 @@ export class TurnLifecycle {
       logger.info("A turn's last narration became its answer.", { agentId, turnId, provider: source.provider });
       return false;
     }
-    if (deliveries.every(({ delivery }) => this.#mailbox.repeatsHandledReply(delivery.id))) {
-      logger.info("A turn for a repeated teammate result ended quietly.", {
+    if (deliveries.every(({ delivery }) => this.#mailbox.answersHandledRequest(delivery.id))) {
+      logger.info("A turn for another teammate result to a handled request ended quietly.", {
         agentId,
         turnId,
         provider: source.provider,
@@ -1060,6 +1061,7 @@ export class TurnLifecycle {
   }
 
   handleStreamingDelta(notification: AppServerNotification): void {
+    perfCount("turn.streamingDelta");
     const params = notification.params;
     const { threadId, agentId } = this.#noteEvent(params);
     if (!threadId || !agentId) return;
@@ -1531,15 +1533,27 @@ export class TurnLifecycle {
             !this.#limitedTurns.has(errorTurnId) &&
             this.#mayHoldError(agentId, errorTurnId, causeCode)
           ) {
-            this.#failoverTurns.set(errorTurnId, { message, context, quiet: true });
+            const link = accountLink(params);
+            this.#failoverTurns.set(errorTurnId, { message, context, quiet: true, ...(link ? { link } : {}) });
             return;
           }
-          this.#hooks.emitFailure?.({ code: "agent_error", ...(agentId !== undefined ? { agentId } : {}), ...context });
           const held = planLimit || (errorTurnId !== null && this.#limitedTurns.has(errorTurnId));
           const taskId =
             !held && notification.method === "error" && agentId && threadId
               ? this.#taskForThread(agentId, threadId)
               : null;
+          if (
+            taskId === null &&
+            !held &&
+            notification.method === "error" &&
+            agentId &&
+            errorTurnId !== null &&
+            this.#runningTurns.has(errorTurnId)
+          ) {
+            this.#hooks.emitError("agent_error", message, agentId, context, accountLink(params));
+            return;
+          }
+          this.#hooks.emitFailure?.({ code: "agent_error", ...(agentId !== undefined ? { agentId } : {}), ...context });
           if (taskId !== null) this.#hooks.taskFailed(taskId, message);
           return;
         }
@@ -2121,7 +2135,7 @@ export class TurnLifecycle {
         ((mayRunAgain && taskTurn && this.#hooks.mayFailOver(agentId)) || (channelTask && backupTakes()))
       )
         this.#markFailed(agentId, model, failover);
-      if (failover) this.#showFailoverError(agentId, threadId, failover);
+      if (failover) this.#showFailoverError(agentId, threadId, failover, status === "failed" && !limited);
       if (compactionFailure && compactionContinuation)
         this.#hooks.emitFailure?.({ code: "agent_error", agentId, ...compactionFailure.context });
       else if (compactionFailure && status === "failed" && !failover)
@@ -2191,7 +2205,8 @@ export class TurnLifecycle {
         running !== undefined &&
         !channelTurn &&
         !routineSession &&
-        (!taskTurn || laneTaskId !== null)
+        (!taskTurn || laneTaskId !== null) &&
+        !this.#mailbox.awaitsTeammate(agentId, laneTaskId)
           ? this.#planContinues(agentId, laneTaskId, turnId, deliveries, latestAssistant?.text)
           : "no";
       const continueMode: FinishCheckMode =
@@ -2330,30 +2345,27 @@ export class TurnLifecycle {
       if (memoryLine) snapshot.messages.push(memoryLine);
       if (instructionsChange) snapshot.messages.push(instructionsChangeMessage(turnId, instructionsChange));
       if (continuation) {
-        snapshot.messages.push({
-          id: `${turnId}:plan-continuation`,
-          author: "system",
-          source: "system",
-          status: "completed",
-          createdAt: new Date().toISOString(),
-          itemType: PLAN_CONTINUATION_ITEM_TYPE,
-          text:
-            continuation.kind === "compaction"
-              ? sourceText("status.agent.compactionContinues")
-              : continuation.kind === "providerExit"
-                ? sourceText("status.agent.providerExitContinues")
-                : sourceText(
-                    continuation.kind === "plan"
-                      ? "status.agent.planContinues"
-                      : continuation.kind === "finishCheck"
-                        ? "status.agent.finishCheckContinues"
-                        : "status.agent.nextStepContinues",
-                    {
-                      current: continuation.current,
-                      limit: continuation.limit,
-                    },
-                  ),
-        });
+        if (continuation.kind !== "finishCheck")
+          snapshot.messages.push({
+            id: `${turnId}:plan-continuation`,
+            author: "system",
+            source: "system",
+            status: "completed",
+            createdAt: new Date().toISOString(),
+            itemType: PLAN_CONTINUATION_ITEM_TYPE,
+            text:
+              continuation.kind === "compaction"
+                ? sourceText("status.agent.compactionContinues")
+                : continuation.kind === "providerExit"
+                  ? sourceText("status.agent.providerExitContinues")
+                  : sourceText(
+                      continuation.kind === "plan" ? "status.agent.planContinues" : "status.agent.nextStepContinues",
+                      {
+                        current: continuation.current,
+                        limit: continuation.limit,
+                      },
+                    ),
+          });
       } else if (planStopped) {
         snapshot.messages.push({
           id: `${turnId}:plan-stopped`,
@@ -2813,6 +2825,7 @@ export class TurnLifecycle {
     const receipt = yield* this.#mailbox
       .enqueue({
         sender: { kind: "agent", agentId },
+        requesterIds: this.#mailbox.requesterIds(messageId),
         recipientAgentIds: [recipientAgentId],
         text,
         replyToMessageId: messageId,

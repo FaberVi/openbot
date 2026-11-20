@@ -32,10 +32,11 @@ that server with no page. The server list sends the limit as
 server list (Settings on desktop, Billing on the web) to delete a server. Each server
 has its own Stripe plan. Its machine comes from the plan: a pool machine of the plan (Starter VPS 1,
 Standard VPS 2, Pro VPS 3), or when none is free, a boat sandbox (`HOSTED_BOAT_PLAN_SIZE`): Starter and
-Standard are `default`, and Pro is `large`. Starter sandboxes from before 2026-11-14 are `small` and keep
-12 GB of storage until a change of plan or billing interval moves them to the new Starter price and to
-`default`. Before the boat claim the row has no machine (`provider_template` is NULL), so the storage that
-the server list and Billing show is the plan storage, not the disk of `size`. `leaseweb-pool.ts move` puts a Starter sandbox on a VPS 1 and sets the row to
+Standard are `default`, and Pro is `large`. Starter sandboxes from before 2026-11-14 are `small` until a
+change of plan or billing interval moves them to the new Starter price and to `default`. Each server
+shows the storage of its plan and storage tier (`storageTierGb`), on a VPS and on boat. The disk of a
+boat type can be smaller than the plan storage. A server on boat moves to a VPS, so the plan storage
+does not depend on the machine. Developer decision, 2026-11-20. `leaseweb-pool.ts move` puts a Starter sandbox on a VPS 1 and sets the row to
 `HOSTED_PLAN_SIZE`.
 
 ## Parts
@@ -1196,11 +1197,12 @@ server got the machine in that moment.
 
 A machine of the pool is not the boat image:
 
-- It has no agent CLI for all users (`claude`, `codex`, `pi`) and no `node`. A provider shows that
-  its CLI is not downloaded, and the user downloads it in OpenBot.
+- It has no agent CLI for all users (`claude`, `codex`, `pi`) and no `node`. At start, a hosted
+  server downloads the CLI of each provider that an agent uses and that is not off. The user
+  downloads the CLI of another provider in OpenBot.
 - It has no Docker and no boat desktop. OpenBot uses its own virtual displays.
-- It shows the storage of a moved server (25, 75 and 150 GB), which is more than the plan table of
-  the pricing page.
+- It shows the storage of the plan (25, 75 and 150 GB), the same numbers as the pricing page
+  (`storageTierGb`).
 - The clients show no restart action, and the server does not stop when it is not in use.
 
 Measured on the test Worker with a real Leaseweb VPS 2 (smoke, 2026-11-13): `prepare` of a clean
@@ -1337,17 +1339,18 @@ still uses the sandbox. The downtime is the export, the copy, the import and the
    `cat >/root/openbot-move.tar`, and the move removes it after the export. So no archive is on the
    disk of the sandbox, and the copy has no separate step. The downtime of the customer starts here.
    The command sets `/run/openbot-pre-stop`, stops `openbot.service`, and archives, with numeric
-   owners, the home of `user` and `/srv/openbot-hosted`. The home has each provider sign-in, API key,
-   MCP server and CLI that OpenBot downloaded. The archive also has what the customer installed
+   owners, the home of `user` and `/srv/openbot-hosted`. The home has each provider sign-in, API key
+   and MCP server. The archive does not have the provider CLIs that OpenBot downloaded
+   (`~/.config/OpenBot/provider-runtimes`, but `bun` stays) or the caches: at start, a hosted server
+   downloads the CLI of each provider that an agent uses. The archive also has what the customer installed
    outside the home, and not what the boat image has (the lists at the top of the script, from image
    `c4ed68db` and `5f37c910`):
    - each directory that the customer added in `/opt`, `/usr/local` and `/usr/local/lib`, and each
      npm package for all users. A directory that programs of root read, such as
      `/usr/local/lib/systemd` or `/usr/local/lib/python3.12`, stays out, and the report names it.
-   - each agent CLI of the image (`claude`, `codex`, `pi`, `cursor-agent`, `hermes`) whose sign-in
-     file in the home has a sign-in. A VPS has none, and OpenBot would ask the customer to download it
-     again. An empty file, a file with only `{}`, or the `.env` that the image writes for Hermes is not
-     a sign-in.
+   - the Hermes CLI of the image when its sign-in file in the home has a sign-in. OpenBot does not
+     download Hermes as it downloads the other provider CLIs. An empty file, a file with only `{}`, or
+     the `.env` that the image writes for Hermes is not a sign-in.
    - each program in `/usr/local/bin` that the image does not have, each link there into a moved
      directory or into the home, and the crontab of `user`.
    - the names of the apt packages that the customer installed (`~/.base-apt-packages.txt` of the
@@ -1463,9 +1466,10 @@ still uses the sandbox. The downtime is the export, the copy, the import and the
 The VPS is not the same machine as the sandbox:
 
 - The boat image has commands that npm installed for all users (`claude`, `codex` and `pnpm` on
-  2026-11-11). The VPS has none. The move copies the agent CLIs that the customer signed in to, and
-  `import` names each other one that is missing. A provider that used a missing command shows that
-  its CLI is not downloaded, and the user downloads it in OpenBot.
+  2026-11-11). The VPS has none. The move copies only the Hermes CLI of the image, and `import` names each other one that
+  is missing. At start, a hosted server downloads the CLI of each
+  provider that an agent uses and that is not off. The user downloads the CLI of another provider in
+  OpenBot.
 - `prepare` makes only the primary group of `user`, and the VPS has no Docker. `import` names each
   group that `user` had in the sandbox (`docker` and `ascii-streaming-audio` on 2026-11-11). An
   agent of the customer that used Docker does not have it after the move.
@@ -1474,14 +1478,14 @@ The VPS is not the same machine as the sandbox:
 - The clients show no restart action for a moved server: the server list of the account service has
   `restartAvailable: false` for it. A client from before this field shows the action and gets the
   refusal of the Worker.
-- A moved server has more storage: 25, 75 and 150 GB for Starter, Standard and Pro
-  (`OPERATOR_HOST_STORAGE_GB`), not the 12, 50 and 100 GB of the plan table. The account service
-  sends the number in the server list, the hosting list and the billing state from the moment of the
-  row `UPDATE`, so the storage meter, the storage alerts, Billing and the plan change offer show it.
-  The host reads it at its start, for the instructions of its agents. The pricing page and the order
-  form keep the plan table, because a new server can start in a boat sandbox. A client or a host from
-  before this number shows the plan table. A rollback gives the server the plan table again, so a
-  server that used more on the VPS shows a full disk.
+- Each server has the storage of its plan: 25, 75 and 150 GB for Starter, Standard and Pro
+  (`BILLING_PLANS`, and `storageTierGb` with a storage tier). The account service sends the number in
+  the server list, the hosting list and the billing state, so the storage meter, the storage alerts,
+  Billing and the plan change offer show it. The host reads it at its start, for the instructions of
+  its agents. The pricing page and the order form show the same numbers. Before 2026-11-20 a server in
+  a boat sandbox showed 12, 50 or 100 GB, limited by the disk of its boat type; now it shows the plan
+  storage, also when the boat disk is smaller. A client or a host from before this number shows the
+  plan table.
 - The number is not a limit that the machine enforces. A host with `storage-user-files-v1` measures
   the files of its user (the home folder, `/tmp` and `/var/tmp`) with `du`, and the clients show the
   plan minus that number. A host from before that capability gets the boat count: the clients
@@ -1527,8 +1531,7 @@ reads only the output between two markers that the command writes.
 
 `move` sets `size` to `HOSTED_PLAN_SIZE` (`small` for Starter), so the statement writes the boat type of
 the sandbox again: the `type` that boat shows for the sandbox (`default` for a Starter sandbox from
-2026-11-14 or later, `small` before). Without it, a Starter row on a `default` sandbox shows 12 GB of
-storage and an almost full disk.
+2026-11-14 or later, `small` before).
 
 ```sql
 UPDATE hosted_servers SET provider_sandbox_id = retired_sandbox_id, retired_sandbox_id = NULL,
@@ -1743,8 +1746,9 @@ system and goes back to the pool for the next new server or the next move. The W
 
 A machine does not wait 14 days with the data of an ended plan. `sync` moves the data into an encrypted
 archive in Backblaze B2 and gives the machine back to the pool ([plan 012](../plans/012-pool-server-archive.md)).
-Do not run `sync --apply` with an archive before the restore (plan 012 item 4) is live: until then, a
-renewal of an archived server gets a new, empty server.
+A renewal before the archive is deleted restores the server on a free pool machine (plan 012 item 4,
+live since 2026-11-19). Run `sync --apply` each day, so that each ended plan frees its machine and each
+restored or due archive is deleted.
 
 1. `sync` finds each server on a machine with `desired_state = 'stopped'`, `plan_ended`, no open
    subscription and no live archive. It reads the newest subscription at Stripe. It archives only a
@@ -1761,7 +1765,7 @@ renewal of an archived server gets a new, empty server.
    additional data). The write stops when the server changed, for example by a renewal; `sync` then
    deletes the object and the machine keeps the data.
 4. `sync` sets `operator_host = NULL` only while `desired_state` is still `stopped`, clears the token of
-   the machine, reinstalls it and sets its reference to `pool`. When the reinstall fails, the archive is
+   the machine, sets its reference to `pool` and reinstalls it. When the reinstall fails, the archive is
    complete but the machine still has the data: run `prepare --reinstall` for it.
 5. Each `sync` deletes an archive in B2 and then its key in D1 (`deleted_at`, `wrapped_key = NULL`) when
    `delete_after` (`plan_ended_at` + 14 days) is past, the server is deleted (owner delete, refund
@@ -1939,10 +1943,10 @@ These were not tested on boat. Test them before a user gets access:
   must check the key before a user deletes the server;
 - the vCPU, memory and disk of boat `large`;
 - a downgrade that boat refuses with `type_too_small`. The test uses a fake boat;
-- the disk of each size. The root file system showed 69 GB on `small` and on `default`, not the 12 GB
-  and 50 GB of the boat machine table. The limit that `type_too_small` uses is not known. The plans
-  show 12, 50 and 100 GB, which is not more than the machine table. The disk of `large` was not
-  measured, so the 100 GB of Pro is not confirmed;
+- the disk of each size. The root file system showed 69 GB on `small` and on `default`. The boat
+  page lists 51 GB for `small` and `default` and 111 GB for `large`. The limit that `type_too_small`
+  uses is not known. A server on boat shows the plan storage (75 GB for Standard, 150 GB for Pro),
+  which is more than the boat disk; it moves to a VPS;
 - that boat frees the key of a refused create, so a retry of a setup that failed works;
 - the menu path of the Stripe failed-payment setting in [Production](#production), and whether test
   mode and live mode keep separate values;

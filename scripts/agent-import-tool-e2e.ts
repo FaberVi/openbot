@@ -109,6 +109,7 @@ process.stdin.on("data", (chunk) => {
 
 const browser: AgentBrowserHost = {
   listTabs: () => [],
+  toolCanUseTab: () => false,
   beginTakeover: () => Effect.die("unused"),
   endTakeover: () => {},
   resolveUploadTarget: () => Effect.die("unused"),

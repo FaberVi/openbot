@@ -1,4 +1,4 @@
-import type { WorkflowStepSettings } from "@openbot/contracts/ipc";
+import type { AgentStepActivity, WorkflowStepSettings } from "@openbot/contracts/ipc";
 import { Toaster } from "@openbot/ui";
 import { AgentNode } from "@openbot/ui/features/workflows/WorkflowAgentNode";
 import { ApprovalNode } from "@openbot/ui/features/workflows/WorkflowApprovalNode";
@@ -12,6 +12,7 @@ import { PromptNode } from "@openbot/ui/features/workflows/WorkflowPromptNode";
 import { TextNode } from "@openbot/ui/features/workflows/WorkflowTextNode";
 import { TriggerNode } from "@openbot/ui/features/workflows/WorkflowTriggerNode";
 import type { WorkflowCatalogs } from "@openbot/ui/features/workflows/workflow-model";
+import { createSignal, onCleanup } from "solid-js";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { NodeGallery } from "./workflow-node-gallery";
 import { createStoryPresence } from "./workflow-presence-story";
@@ -83,6 +84,11 @@ export const ExampleWithCollaborators: Story = {
 export const InApp: Story = {
   name: "In app",
   render: () => <WorkflowInAppStory workflows={[competitorWatch(), newCompetitorAlert()]} />,
+};
+
+export const InAppOpening: Story = {
+  name: "In app, opening",
+  render: () => <WorkflowInAppStory workflows={[competitorWatch(), newCompetitorAlert()]} opening />,
 };
 
 export const HiggsfieldVideo: Story = {
@@ -230,6 +236,49 @@ export const Agent: Story = {
   ),
 };
 
+const LIVE_STEPS: readonly { detail: string; activity: AgentStepActivity }[] = [
+  { detail: "Searched the web: “Northwind Atlas launch”", activity: "searching" },
+  { detail: "Reading northwind.com/changelog", activity: "reading" },
+  { detail: "Reading northwind.com/pricing", activity: "reading" },
+  { detail: "Opening news.ycombinator.com", activity: "browsing" },
+  { detail: "Searched the web: “Northwind Slack connector”", activity: "searching" },
+  { detail: "Reading northwind.com/blog/atlas", activity: "reading" },
+  { detail: "Reviewing the results", activity: "reviewing" },
+];
+
+function RunningAgentGallery() {
+  const [step, setStep] = createSignal(0);
+  const timer = setInterval(() => setStep((value) => (value + 1) % LIVE_STEPS.length), 1800);
+  onCleanup(() => clearInterval(timer));
+  return (
+    <NodeGallery
+      selected="research"
+      status={{ research: "running" }}
+      fields={{ research: { stepName: "Research competitors" }, summary: { stepName: "Summary for #market" } }}
+      edges={[{ id: "research>summary", from: "research", to: "summary", type: "text" }]}
+      progress={(id) => {
+        const current = LIVE_STEPS[step()];
+        if (id !== "research" || !current) return undefined;
+        return {
+          agentId: AGENT,
+          detail: current.detail,
+          previous: LIVE_STEPS[step() - 1]?.detail,
+          activity: current.activity,
+          done: step(),
+        };
+      }}
+    >
+      <AgentNode id="research" agentId={AGENT} task={TASK} />
+      <LlmNode id="summary" prompt="Summarize the research in 3 lines for the market team" />
+    </NodeGallery>
+  );
+}
+
+export const AgentRunning: Story = {
+  name: "Agent, running with step names",
+  render: () => <RunningAgentGallery />,
+};
+
 export const Llm: Story = {
   name: "LLM",
   render: () => (
@@ -307,6 +356,29 @@ export const VideoCustomLength: Story = {
     >
       <ImageNode id="listed" prompt="A drone shot over a coastal town at sunrise" />
       <ImageNode id="custom" prompt="A drone shot over a coastal town at sunrise" />
+    </NodeGallery>
+  ),
+};
+
+const STORY_CLIP = new URL("../../../packages/ui/src/assets/plush/fishing.webm", import.meta.url).href;
+
+export const VideoWithClip: Story = {
+  name: "Video, with a clip",
+  render: () => (
+    <NodeGallery
+      selected="clip"
+      catalogs={{
+        ...STORY_CATALOGS,
+        imageModels: [RANGE_VIDEO_MODEL, ...STORY_CATALOGS.imageModels],
+        media: (value, kind) => (kind === "video" && value === "plush-clip" ? STORY_CLIP : undefined),
+      }}
+      fields={{
+        empty: { media: "video", model: RANGE_VIDEO_MODEL.id, aspect: "16:9", duration: 6 },
+        clip: { media: "video", model: RANGE_VIDEO_MODEL.id, aspect: "16:9", duration: 6 },
+      }}
+    >
+      <ImageNode id="empty" prompt="A plush toy fishing from a small wooden pier at sunset" />
+      <ImageNode id="clip" image="plush-clip" prompt="A plush toy fishing from a small wooden pier at sunset" />
     </NodeGallery>
   ),
 };

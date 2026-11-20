@@ -381,6 +381,7 @@ export class AgentStore {
             : folder,
         );
       record.computerUse = source.computerUse;
+      if (source.memory === false) record.memory = false;
       if (source.busyMessageMode) record.busyMessageMode = source.busyMessageMode;
       if (source.taskLimit !== undefined) record.taskLimit = source.taskLimit;
       if (source.backupModels) record.backupModels = structuredClone(source.backupModels);
@@ -704,6 +705,11 @@ export class AgentStore {
         if (!isBoolean(input.allowNewChat)) throw new Error("Invalid new chat value.");
         next.allowNewChat = input.allowNewChat;
       }
+      if (input.memory !== undefined) {
+        if (!isBoolean(input.memory)) throw new Error("Invalid memory value.");
+        if (input.memory) delete next.memory;
+        else next.memory = false;
+      }
       if (input.quickAcknowledgement === null) delete next.quickAcknowledgement;
       else if (input.quickAcknowledgement !== undefined) {
         if (!isBoolean(input.quickAcknowledgement)) throw new Error("Invalid quick acknowledgement value.");
@@ -833,6 +839,7 @@ export class AgentStore {
       if (next.allowAutomation === undefined) delete agent.allowAutomation;
       if (next.allowNewChat === undefined) delete agent.allowNewChat;
       if (next.quickAcknowledgement === undefined) delete agent.quickAcknowledgement;
+      if (next.memory === undefined) delete agent.memory;
       if (next.ultrafast === undefined) delete agent.ultrafast;
       if (next.avatarColor === undefined) delete agent.avatarColor;
       if (next.chatColor === undefined) delete agent.chatColor;
@@ -853,6 +860,7 @@ export class AgentStore {
         if (previous.allowAutomation === undefined) delete agent.allowAutomation;
         if (previous.allowNewChat === undefined) delete agent.allowNewChat;
         if (previous.quickAcknowledgement === undefined) delete agent.quickAcknowledgement;
+        if (previous.memory === undefined) delete agent.memory;
         if (previous.ultrafast === undefined) delete agent.ultrafast;
         if (previous.avatarColor === undefined) delete agent.avatarColor;
         if (previous.chatColor === undefined) delete agent.chatColor;
@@ -1384,6 +1392,10 @@ export class AgentStore {
     return this.#state.agents.some((agent) => agent.threadId === threadId);
   }
 
+  mainThreadAgentId(threadId: string): string | null {
+    return this.#state.agents.find((agent) => agent.threadId === threadId)?.id ?? null;
+  }
+
   activeProviderSession(id: string): ProviderSession | null {
     const agent = this.#requireAgent(id);
     if (!agent.threadId) return null;
@@ -1781,6 +1793,7 @@ function isStoredAgent(value: unknown): value is PersistedStoredAgent {
     (record.allowAutomation === undefined || isBoolean(record.allowAutomation)) &&
     (record.allowNewChat === undefined || isBoolean(record.allowNewChat)) &&
     (record.quickAcknowledgement === undefined || isBoolean(record.quickAcknowledgement)) &&
+    (record.memory === undefined || record.memory === false) &&
     (record.ownBrowserSession === undefined || isBoolean(record.ownBrowserSession)) &&
     (record.browserProfileId === undefined || isBrowserProfileId(record.browserProfileId)) &&
     (record.fastMode === undefined || isBoolean(record.fastMode)) &&
@@ -1854,6 +1867,7 @@ function readStoredAgent(value: unknown): ReadStoredAgent | UnreadableStoredAgen
     value.quickAcknowledgement === undefined || isBoolean(value.quickAcknowledgement)
       ? value.quickAcknowledgement
       : reset("quickAcknowledgement", undefined);
+  const memory = value.memory === undefined || value.memory === false ? value.memory : reset("memory", undefined);
   const ownBrowserSession =
     value.ownBrowserSession === undefined || isBoolean(value.ownBrowserSession)
       ? value.ownBrowserSession
@@ -1949,6 +1963,7 @@ function readStoredAgent(value: unknown): ReadStoredAgent | UnreadableStoredAgen
     ...(allowAutomation === undefined ? {} : { allowAutomation }),
     ...(allowNewChat === undefined ? {} : { allowNewChat }),
     ...(quickAcknowledgement === undefined ? {} : { quickAcknowledgement }),
+    ...(memory === undefined ? {} : { memory }),
     ...(ownBrowserSession === undefined ? {} : { ownBrowserSession }),
     ...(browserProfileId === undefined ? {} : { browserProfileId }),
     ...(fastMode === undefined ? {} : { fastMode }),
