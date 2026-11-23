@@ -25,11 +25,14 @@ import type { TeamApiRequest } from "./team-api-requests";
 
 export type PlanLimitTone = "neutral" | "warning" | "critical";
 
+export type PlanLimitWindowName = "total" | "cursorModels" | "otherModels";
+
 export interface PlanLimitWindow {
   durationMins: number | null;
   remainingPercent: number;
   tone: PlanLimitTone;
   resetsAt: number | null;
+  name?: PlanLimitWindowName;
 }
 
 export interface PlanLimitGroup {
@@ -109,21 +112,50 @@ export function reportedUsageWindows(
     );
 }
 
-function planLimitWindow(window: AccountUsageWindow): PlanLimitWindow {
+function planLimitWindow(window: AccountUsageWindow, name?: PlanLimitWindowName): PlanLimitWindow {
   const remainingPercent = usageRemainingPercent(window.usedPercent);
   return {
     durationMins: window.windowDurationMins,
     remainingPercent,
     tone: usageTone(remainingPercent),
     resetsAt: window.resetsAt,
+    ...(name ? { name } : {}),
   };
+}
+
+function planLimitWindowEntries(
+  provider: AgentProviderId,
+  limit: Pick<AccountUsageLimit, "primary" | "secondary" | "tertiary">,
+): Array<{ window: AccountUsageWindow; name?: PlanLimitWindowName }> {
+  if (provider !== "cursor") return reportedUsageWindows(limit).map((window) => ({ window }));
+  const total = limit.tertiary;
+  const split = total && (limit.primary || limit.secondary);
+  if (split && total) {
+    return [
+      { window: total, name: "total" },
+      ...(limit.primary ? [{ window: limit.primary, name: "cursorModels" as const }] : []),
+      ...(limit.secondary ? [{ window: limit.secondary, name: "otherModels" as const }] : []),
+    ];
+  }
+  return reportedUsageWindows(limit).map((window) => ({
+    window,
+    ...(limit.tertiary && window === limit.tertiary
+      ? { name: "total" as const }
+      : limit.primary && limit.secondary
+        ? window === limit.primary
+          ? { name: "cursorModels" as const }
+          : window === limit.secondary
+            ? { name: "otherModels" as const }
+            : {}
+        : {}),
+  }));
 }
 
 export function planLimitRows(usage: AccountUsage | null | undefined): PlanLimitRow[] {
   const rows: PlanLimitRow[] = [];
   for (const limit of usage?.limits ?? []) {
     if (!isAgentProvider(limit.id)) continue;
-    const windows = reportedUsageWindows(limit).map(planLimitWindow);
+    const windows = planLimitWindowEntries(limit.id, limit).map(({ window, name }) => planLimitWindow(window, name));
     if (windows.length === 0) continue;
     const remainingPercent = Math.min(...windows.map((window) => window.remainingPercent));
     const groupWindows = (limit.groups ?? []).flatMap((group) => {

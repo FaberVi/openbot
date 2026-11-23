@@ -5,6 +5,7 @@ import {
   type PlanLimitRow,
   type PlanLimits,
   type PlanLimitWindow,
+  type PlanLimitWindowName,
   planLimitRows,
   planLimitWindowKind,
 } from "@openbot/team-client/plan-limits";
@@ -148,13 +149,21 @@ export function planLimitWindowKey(window: PlanLimitWindow, index: number): stri
 }
 
 export function planLimitListedWindowLabel(window: PlanLimitListedWindow, t: Translate): string {
-  const label = planLimitWindowLabel(window.durationMins, t);
+  const label = planLimitWindowLabel(window.durationMins, t, window.name);
   if (window.group === null) return label;
   if (window.group.windowCount === 1) return window.group.name;
   return t("mobile.server.planLimits.window.group", { group: window.group.name, window: label });
 }
 
-export function planLimitWindowLabel(durationMins: number | null, t: Translate): string {
+export function planLimitWindowLabel(durationMins: number | null, t: Translate, name?: PlanLimitWindowName): string {
+  switch (name) {
+    case "total":
+      return t("mobile.server.planLimits.window.total");
+    case "cursorModels":
+      return t("mobile.server.planLimits.window.cursorModels");
+    case "otherModels":
+      return t("mobile.server.planLimits.window.otherModels");
+  }
   const window = planLimitWindowKind(durationMins);
   switch (window.kind) {
     case "limit":
