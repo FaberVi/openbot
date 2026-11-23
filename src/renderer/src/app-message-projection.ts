@@ -1,14 +1,17 @@
 import { feedbackSentIssue } from "@openbot/contracts/feedback";
 import { serverInstallEvent } from "@openbot/contracts/hosted-servers";
-import type { ConversationMessage, ConversationSearchPage, QueueDeliveryStatus } from "@openbot/contracts/ipc";
 import {
   AGENT_INSTRUCTIONS_CHANGE_ITEM_TYPE,
   AGENT_WELCOME_ITEM_TYPE,
   CHANNEL_RESUME_ITEM_TYPE,
+  type ClientAgentSummary,
   CONVERSATION_MEMORY_CHANGES_ITEM_TYPE,
   CONVERSATION_PLAN_ITEM_TYPE,
   CONVERSATION_SUBAGENTS_ITEM_TYPE,
+  type ConversationMessage,
+  type ConversationSearchPage,
   hostedSiteConversationEvent,
+  isAgentStoredEmptyPreview,
   isChannelChangeMarker,
   isContextResetMarker,
   isPlanContinuationMarker,
@@ -17,6 +20,7 @@ import {
   mcpSignInEvent,
   modelSwitchReason,
   parseConversationPlanText,
+  type QueueDeliveryStatus,
   replacedConversationPlans,
   routineConversationEvent,
   routineRunConversationEvent,
@@ -25,11 +29,9 @@ import {
   skillConversationEvent,
   skillSuggestionEvent,
 } from "@openbot/contracts/ipc";
+import { markdownPreviewText } from "@openbot/contracts/markdown-preview-text";
 import { sourceText as englishSourceText } from "@openbot/i18n/source";
 import { cleanAgentMessageText } from "@openbot/team-client/agent-message-text";
-
-export { toAgentProfile } from "@openbot/ui/features/agents/agent-profile";
-
 import type {
   AgentDeliveryMarkerStatus,
   AgentMessage,
@@ -49,6 +51,47 @@ function feedbackSentTitle(text: string): string {
     if (text.startsWith(prefix)) return text.slice(prefix.length);
   }
   return "";
+}
+
+export function toAgentProfile(stored: ClientAgentSummary): AgentProfile {
+  return {
+    id: stored.id,
+    name: stored.name,
+    title: stored.title,
+    description: stored.description,
+    notifications: stored.notifications,
+    provider: stored.provider,
+    model: stored.model,
+    reasoningEffort: stored.reasoningEffort,
+    ...(stored.providerAccountId === undefined ? {} : { providerAccountId: stored.providerAccountId }),
+    ...(stored.access === undefined ? {} : { access: stored.access }),
+    ...(stored.computerUse === undefined ? {} : { computerUse: stored.computerUse }),
+    ...(stored.allowAutomation === undefined ? {} : { allowAutomation: stored.allowAutomation }),
+    ...(stored.allowNewChat === undefined ? {} : { allowNewChat: stored.allowNewChat }),
+    ...(stored.quickAcknowledgement === undefined ? {} : { quickAcknowledgement: stored.quickAcknowledgement }),
+    ...(stored.fastMode === undefined ? {} : { fastMode: stored.fastMode }),
+    ...(stored.ultrafast === undefined ? {} : { ultrafast: stored.ultrafast }),
+    ...(stored.ownBrowserSession === undefined ? {} : { ownBrowserSession: stored.ownBrowserSession }),
+    ...(stored.browserProfileId === undefined ? {} : { browserProfileId: stored.browserProfileId }),
+    ...(stored.busyMessageMode === undefined ? {} : { busyMessageMode: stored.busyMessageMode }),
+    ...(stored.taskLimit === undefined ? {} : { taskLimit: stored.taskLimit }),
+    ...(stored.backupModels === undefined ? {} : { backupModels: stored.backupModels }),
+    ...(stored.additionalFolders === undefined ? {} : { additionalFolders: stored.additionalFolders }),
+    ...(stored.excludedFolders === undefined ? {} : { excludedFolders: stored.excludedFolders }),
+    ...(stored.usageLimitReturn === undefined ? {} : { usageLimitReturn: stored.usageLimitReturn }),
+    ...(stored.pendingRuntime === undefined ? {} : { pendingRuntime: stored.pendingRuntime }),
+    threadId: stored.threadId,
+    workspacePath: stored.workspacePath,
+    avatarSeed: stored.avatarSeed,
+    avatarHue: stored.avatarHue,
+    ...(stored.avatarColor == null ? {} : { avatarColor: stored.avatarColor }),
+    ...(stored.chatColor === undefined ? {} : { chatColor: stored.chatColor }),
+    avatarUrl: stored.avatarUrl,
+    ...(stored.marketplaceSource === undefined ? {} : { marketplaceSource: stored.marketplaceSource }),
+    updatedAt: stored.updatedAt,
+    time: stored.updatedAt ? formatTime(stored.updatedAt) : currentText().t("chat.day.now"),
+    preview: cleanPreview(stored.preview),
+  };
 }
 
 function conversationMessageBody(message: ConversationMessage): string {
@@ -257,7 +300,6 @@ export function agentProfilesEqual(left: AgentProfile, right: AgentProfile): boo
     left.allowAutomation === right.allowAutomation &&
     left.allowNewChat === right.allowNewChat &&
     left.quickAcknowledgement === right.quickAcknowledgement &&
-    left.memory === right.memory &&
     left.fastMode === right.fastMode &&
     left.ultrafast === right.ultrafast &&
     left.ownBrowserSession === right.ownBrowserSession &&
@@ -562,6 +604,22 @@ export function withoutAgent<T>(values: Record<string, T>, agentId: string): Rec
   const next = { ...values };
   delete next[agentId];
   return next;
+}
+
+function cleanPreview(preview: string): string {
+  if (isAgentStoredEmptyPreview(preview)) return currentText().t("app.agent.noMessages");
+  const cleaned = markdownPreviewText(cleanAgentMessageText(preview))
+    .replace(/\binbox\s+at\s+zero\b[:,]?\s*/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return cleaned || currentText().t("app.agent.noMessages");
+}
+
+function formatTime(value: string): string {
+  const date = new Date(value);
+  const { t, format } = currentText();
+  if (Number.isNaN(date.getTime())) return t("chat.day.now");
+  return format.date(date, { hour: "2-digit", minute: "2-digit" });
 }
 
 export function formatMessageTime(value: string): string {
