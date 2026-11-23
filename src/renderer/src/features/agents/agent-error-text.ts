@@ -11,6 +11,8 @@ const RETRY_NOTICE_KEYS: ReadonlySet<string> = new Set([
   "error.backend.turnStartUnconfirmed",
 ]);
 
+const BROWSER_ARGUMENTS_ERROR_KEYS: ReadonlySet<string> = new Set(["error.agent.browserArgumentsInvalid"]);
+
 export function createTurnErrorBanners() {
   const retryNotices = new Map<string, string>();
   const errors = new Map<string, string>();
@@ -70,6 +72,9 @@ export function remoteAgentError(message: string): string {
 
 export function readableAgentError(message: string): string {
   const { t, errorMessage } = currentText();
+  if (matchingSourceKeys(message.trim()).some((key) => BROWSER_ARGUMENTS_ERROR_KEYS.has(key))) {
+    return t("error.agent.browserArgumentsInvalidUser");
+  }
   const readable = errorMessage(message, t("agent.error.continueFailed"));
   if (readable.length <= ERROR_DESCRIPTION_LIMIT) return readable;
   return `${readable.slice(0, ERROR_DESCRIPTION_LIMIT - 1).trimEnd()}…`;
