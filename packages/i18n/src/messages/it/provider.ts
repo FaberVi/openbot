@@ -117,14 +117,11 @@ export const messages = {
   "provider.picker.download": "Download di {name}",
   "provider.picker.search": "Cerca modelli",
   "provider.picker.noMatches": "Nessun modello corrisponde alla ricerca.",
-  "provider.picker.openrouterNoMatches":
-    "Nessun modello corrisponde alla ricerca. Le tue impostazioni di privacy, provider e guardrail su openrouter.ai possono nascondere modelli da questo elenco.",
   "provider.picker.workspaceOnlyUnavailable":
     "Questi modelli non funzionano con «Solo workspace» su Windows e Linux. Per usarli, cambia «Permessi» nelle impostazioni dell'agente.",
   "provider.picker.olderModels": "Modelli precedenti",
   "provider.picker.olderModelsList": "Modelli {name} precedenti",
-  "provider.picker.noModels":
-    "Qui non compare nessun modello di {name}. Se sono disattivati, un amministratore può attivarli in Impostazioni server > Provider > {name} > Modelli.",
+  "provider.picker.noModels": "{name} non ha modelli disponibili.",
   "provider.picker.endpointModelsInCustom":
     "{name} esegue i tuoi endpoint personalizzati. I loro modelli sono nella scheda Personalizzato.",
   "provider.picker.showCustomModels": "Mostra modelli",
@@ -145,7 +142,6 @@ export const messages = {
   "provider.picker.effort": "Impegno",
   "provider.picker.effortLabel": "Impegno di ragionamento dell'agente",
   "provider.picker.effortFixed": "{effort}, fissato da {provider}",
-  "provider.picker.effortLimited": "Le impostazioni di Claude o la tua organizzazione limitano l’impegno a {effort}.",
   "provider.picker.fast": "Veloce",
   "provider.picker.fastText": "Risposte più rapide, utilizzo maggiore",
   "provider.picker.speed": "Velocità",
@@ -184,6 +180,12 @@ export const messages = {
   "provider.claudeKey.description":
     "Salva una chiave API di Anthropic sull'host. Anthropic addebita ogni richiesta al credito API della chiave, non al tuo piano Claude. Per usarla per un agente, seleziona l'account «Chiave API» nel menu dei modelli dell'agente. Se Claude non ha un accesso, tutti gli agenti usano la chiave.",
   "provider.claudeKey.label": "Chiave API di Anthropic",
+  "provider.codexKey.title": "Accedi con una chiave API OpenAI",
+  "provider.codexKey.description":
+    "Codex salva la chiave su questo computer. OpenAI addebita ogni richiesta alla chiave, non al tuo piano ChatGPT. Per usare di nuovo il piano, disconnetti l'account e connetti ChatGPT.",
+  "provider.codexKey.descriptionHost":
+    "Codex salva la chiave sull'host. OpenAI addebita ogni richiesta alla chiave, non al tuo piano ChatGPT. Per usare di nuovo il piano, disconnetti l'account e connetti ChatGPT.",
+  "provider.codexKey.label": "Chiave API OpenAI",
   "provider.cursorKey.title": "Chiave API di Cursor",
   "provider.cursorKey.description":
     "Ogni account Cursor dopo il primo usa una chiave API. Crea una chiave nella dashboard di Cursor, in Integrations, e incollala qui. La chiave viene salvata su questo computer.",
@@ -262,16 +264,61 @@ export const messages = {
   "provider.account.poolChip": "Pool",
   "provider.account.poolCount": "Pool di {accounts}",
   "provider.account.poolInUse": "{pool} · {name} in uso",
+  "provider.settings.connected": "Connesso",
+  "provider.settings.other": "Altri provider",
+  "provider.settings.search": "Cerca provider",
+  "provider.settings.open": "Apri {name}",
+  "provider.settings.noneConnected": "Nessun provider è connesso.",
+  "provider.settings.noMatch": "Nessun provider corrisponde a «{query}».",
+  "provider.settings.noConnectedMatch": "Nessun provider connesso corrisponde a «{query}».",
+  "provider.settings.defaultHint": "I nuovi agenti iniziano con questo provider.",
+  "provider.settings.accountsWaiting": {
+    one: "{accounts} · {count} richiede l'accesso",
+    other: "{accounts} · {count} richiedono l'accesso",
+  },
+  "provider.settings.badge.signIn": "Accedi",
+  "provider.settings.badge.error": "Errore",
+  "provider.settings.status.needsSignIn": "Serve l'accesso",
+  "provider.settings.status.error": "Errore",
+  "provider.settings.unused": "Nessun agente lo usa",
+  "provider.settings.usedByCount": { one: "1 agente lo usa", other: "{count} agenti lo usano" },
+  "provider.settings.defaultSubtitle": "Predefinito per i nuovi agenti · {use}",
+  "provider.settings.accounts": "Account",
+  "provider.settings.accountsDescription": "{count} di {max}. Ogni agente usa un account.",
   "provider.settings.accountsPooledDescription": "{count} di {max}. Gli agenti condividono questi account.",
+  "provider.settings.accountBlocked": "{agents} non può girare finché non accedi di nuovo.",
+  "provider.settings.removeTitle": "Rimuovere {name}?",
+  "provider.settings.removeMoves": "{agents} userà {name}.",
+  "provider.settings.removeUnused": "Nessun agente usa questo account.",
+  "provider.settings.removeCredentials": "OpenBot elimina l'accesso di questo account da questo computer.",
   "provider.settings.disconnectTitle": "Disconnettere {name}?",
   "provider.settings.disconnectOthers": "Gli altri account {provider} attendono finché non ricolleghi {provider}.",
   "provider.settings.disconnectLocal":
     "OpenBot disconnette {provider} su questo computer. Anche la CLI {provider} nel terminale viene disconnessa.",
   "provider.settings.disconnectHost": "OpenBot disconnette {provider} sul server.",
+  "provider.settings.usageLow": "{percent} rimanente · {window}",
+  "provider.settings.usageOf": "Utilizzo di {name}",
+  "provider.settings.signIn": "Accesso",
+  "provider.settings.apiKey": "Chiave API",
+  "provider.settings.keySaved": "Chiave salvata",
+  "provider.settings.noKey": "Nessuna chiave",
+  "provider.settings.keyOptional": "Facoltativa. Una chiave aggiunge i modelli a pagamento.",
+  "provider.settings.keyAlternative": "Oppure incolla una chiave API di {name}.",
+  "provider.settings.geminiKeyInUse":
+    "Gemini usa questa chiave, non il tuo piano Google AI. L'utilizzo del piano non viene mostrato.",
   "provider.settings.geminiKeyReplacesAccount":
     "Una chiave API Gemini salvata viene usata al posto di un accesso con Google. Per usare un piano Google e i suoi modelli, rimuovi la chiave.",
-  "provider.settings.museKeyInUse":
-    "Muse usa questa chiave, non il tuo accesso. Per usare il tuo accesso, rimuovi la chiave.",
+  "provider.settings.claudeKeyInUse":
+    "Anthropic addebita al credito API della chiave, non al tuo piano Claude. Seleziona l'account «Chiave API» nel menu dei modelli di un agente. Se Claude non ha un accesso, tutti gli agenti usano la chiave.",
+  "provider.settings.codexKeyInUse":
+    "ChatGPT usa questa chiave, non il tuo piano ChatGPT. OpenAI addebita ogni richiesta alla chiave. L'utilizzo del piano non viene mostrato.",
+  "provider.settings.codexKeyAlternative":
+    "Oppure accedi con una chiave API OpenAI. OpenAI addebita ogni richiesta alla chiave.",
+  "provider.settings.addKey": "Aggiungi chiave",
+  "provider.settings.changeKey": "Cambia chiave",
+  "provider.settings.runtime": "Runtime",
+  "provider.settings.version": "Versione",
+  "provider.settings.versionAvailable": "{installed} · è disponibile la {available}",
   "provider.settings.versionInstalledByUser": "{version} · installata da te",
   "provider.settings.versionDownloaded": "{version} · scaricata da OpenBot",
   "provider.settings.otherVersionInstalledByUser": "Non in uso: {version} · installata da te",
@@ -280,18 +327,16 @@ export const messages = {
     "Alcuni modelli richiedono un componente che manca in questa versione. Scarica la versione di OpenBot per usarli.",
   "provider.settings.useInstalledVersion": "Usa quella installata",
   "provider.settings.useDownloadedVersion": "Usa quella di OpenBot",
+  "provider.settings.update": "Aggiorna",
+  "provider.settings.downloadLabel": "Download di {name}",
+  "provider.settings.diagnostics": "Diagnostica",
   "provider.settings.cache": "Cache",
   "provider.settings.promptCache": "Cache dei prompt",
   "provider.settings.promptCacheDescription":
-    "Per quanto tempo Claude e Pi tengono il contesto di un agente nella cache tra un turno e l’altro.",
+    "Per quanto tempo Claude tiene in cache il contesto di un agente tra un turno e l'altro.",
   "provider.settings.promptCacheHour": "1 ora",
-  "provider.settings.promptCacheDefault": "Predefinito del provider",
+  "provider.settings.promptCacheDefault": "Predefinito di Claude Code",
   "provider.settings.promptCacheLoadFailed": "Impossibile caricare la durata della cache dei prompt di questo server.",
-  "provider.settings.cacheExpiryCompaction": "Compatta prima della scadenza della cache",
-  "provider.settings.cacheExpiryCompactionDescription":
-    "Quando una chat con 200K o più token di contesto è inattiva con una cache di 1 ora, l’agente compatta il contesto prima della scadenza della cache. Così il messaggio successivo non rilegge tutto il contesto senza cache.",
-  "provider.settings.cacheExpiryCompactionLoadFailed":
-    "Impossibile caricare l’impostazione di compattazione di questo server.",
   "provider.settings.claudeSetup": "Claude Code",
   "provider.settings.claudeUserSetup": "Usa la mia configurazione di Claude Code",
   "provider.settings.claudeUserSetupDescription":
@@ -341,13 +386,22 @@ export const messages = {
   "provider.settings.modelShow": "Mostra {name} ({id}) nel selettore dei modelli",
   "provider.settings.modelsNoMatch": "Nessun modello corrisponde alla ricerca.",
   "provider.settings.modelsLoadFailed": "Impossibile caricare i modelli di questo server.",
+  "provider.settings.use": "Usa",
+  "provider.settings.defaultForNew": "Predefinito per i nuovi agenti",
+  "provider.settings.startsWith": "I nuovi agenti iniziano con {name}.",
+  "provider.settings.connectFirst": "Connetti prima {name}.",
+  "provider.settings.turnOnFirst": "Attiva prima {name}.",
+  "provider.settings.makeDefault": "Imposta come predefinito",
+  "provider.settings.useTitle": "Usa {name}",
   "provider.settings.deleteTitle": "Elimina {name}",
   "provider.settings.deleteOn":
     "Disattiva {name} ed elimina la CLI scaricata da OpenBot. Account, accessi e agenti restano.",
   "provider.settings.deleteOff":
     "Elimina la CLI che OpenBot ha scaricato per {name} ({size}). Account, accessi e agenti restano.",
   "provider.settings.removeDownloadFailed": "Impossibile rimuovere il download.",
+  "provider.settings.endpoints": "Endpoint",
+  "provider.settings.noEndpoints": "Nessun endpoint.",
+  "provider.settings.endpointModels": { one: "{url} · 1 modello", other: "{url} · {count} modelli" },
   "provider.settings.disconnectLocalOnly":
     "OpenBot disconnette {provider} su questo computer. La CLI di {provider} nel tuo terminale mantiene il proprio accesso.",
-  "provider.settings.updateAll": "Aggiorna tutti",
 } as const satisfies PartialTranslation<typeof source>;
