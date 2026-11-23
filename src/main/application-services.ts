@@ -405,6 +405,7 @@ import { PushNotificationStore } from "./push-notification-store";
 import { DESKTOP_USE_MS } from "./push-notifications";
 import { ReferralDesktopService } from "./referral-service";
 import { RelayedMessagingInstalls } from "./relayed-messaging-installs";
+import { RemoteAgentBridgeReach } from "./remote-agent-bridge-reach";
 import { decodeQueuedMessageReceipt } from "./remote-agent-decoding";
 import { RemoteConnectTrace } from "./remote-connect-trace";
 import { createRemoteControlPolicyStore } from "./remote-control-policy-store";
@@ -751,6 +752,7 @@ export interface ApplicationServices {
   agentInitialization: AgentInitializationGate<AgentLifecycleFailed>;
   sidebarLayout: SidebarLayoutStore;
   host: HostService;
+  remoteAgentBridgeReach: RemoteAgentBridgeReach | null;
   remoteDesktop: RemoteDesktopManager;
   remoteServers: RemoteServerManager;
   localServers: LocalServers | null;
@@ -2062,6 +2064,11 @@ export async function createApplicationServices({
   const service: AgentService = new AgentService({
     store,
     mailbox,
+    remoteAgentBridgeCipher: {
+      encrypt: (value) => safeStorageCipher("error.app.secretStorageUnavailable").encrypt(value),
+      decrypt: (value) => safeStorageCipher("error.app.secretStorageUnavailable").decrypt(value),
+    },
+    serverName: () => teamStore.getIdentity()?.serverName ?? "OpenBot",
     browser,
     finishCheck: true,
     cacheExpiryCompaction: () => cacheExpiryCompaction.get().enabled,
@@ -3216,6 +3223,11 @@ export async function createApplicationServices({
       }),
     remove: (mcpServerId) => mcpAccessStore.remove(mcpServerId),
   };
+  let hostRef: HostService | null = null;
+  const remoteAgentBridgeReach = new RemoteAgentBridgeReach({
+    bridge: service.remoteAgentBridge,
+    teamApiPort: () => hostRef?.teamApiPort() ?? null,
+  });
   const remoteDesktopRuntimeCredentials = { username: "openbot", password: randomBytes(32).toString("base64url") };
   const attachmentPreviews = new AttachmentPreviews(join(app.getPath("userData"), "attachment-previews"));
   const host = new HostService({
@@ -3397,6 +3409,9 @@ export async function createApplicationServices({
       },
       routineResults: routineResultRuntime,
       routineRunCommand: service,
+      remoteAgentBridge: service.remoteAgentBridge,
+      remoteAgentBridgeReach,
+      serverName: () => teamStore.getIdentity()?.serverName ?? "OpenBot",
       ...(localServerChild || serverModeEnvironment || hostedServer
         ? {}
         : {
@@ -3564,6 +3579,7 @@ export async function createApplicationServices({
         catch: (cause) => new RemoteWorkflowError({ cause }),
       }),
   });
+  hostRef = host;
   teardown.push(TEARDOWN_ORDER.host, "the local host", () => runCauseEffect(host.shutdown()));
   const signedInState = centralAuth.getState();
   if (localServerChild) {
@@ -4437,6 +4453,7 @@ export async function createApplicationServices({
     describeRestartReadiness,
     sidebarLayout,
     host,
+    remoteAgentBridgeReach,
     remoteDesktop,
     remoteServers,
     localServers,

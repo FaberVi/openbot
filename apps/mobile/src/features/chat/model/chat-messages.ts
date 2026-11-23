@@ -65,6 +65,7 @@ export type ChatMessage =
       id: string;
       kind: "exchange";
       exchange: AgentExchangeSummary;
+      remoteSender?: { agentId: string; agentName: string; serverName: string };
       standalone: boolean;
     }
   | { id: string; kind: "context-reset" }
@@ -483,6 +484,7 @@ export function projectChatMessages(
           id: `exchange:${message.id}`,
           kind: "exchange",
           exchange,
+          ...(message.remoteSender ? { remoteSender: message.remoteSender } : {}),
           standalone: exchange.direction === "incoming" && Boolean(message.attachments?.length),
         })),
       );

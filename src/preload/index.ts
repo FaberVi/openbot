@@ -336,6 +336,12 @@ import {
 } from "./password-manager-decoding";
 import { decodeProviderRuntimeSnapshot } from "./provider-runtime";
 import {
+  decodeRemoteAgentBridgeInvite,
+  decodeRemoteAgentBridgeLink,
+  decodeRemoteAgentBridgeReachStatus,
+  decodeRemoteAgentBridgeSnapshot,
+} from "./remote-agent-bridge-decoding";
+import {
   decodeRoutineResultDeliveries,
   decodeRoutineResultDestination,
   decodeRoutineResultOptions,
@@ -1176,6 +1182,15 @@ const openbotApi: OpenBotDesktopApi = {
     create: decodeServer,
     restart: decodeVoid,
     delete: decodeVoid,
+  }),
+  remoteAgentBridge: bridgeGroup(IPC_ENDPOINTS.remoteAgentBridge, {
+    list: decodeRemoteAgentBridgeSnapshot,
+    createInvite: decodeRemoteAgentBridgeInvite,
+    revokeInvite: decodeVoid,
+    redeem: decodeRemoteAgentBridgeLink,
+    revokeLink: decodeVoid,
+    reachStatus: decodeRemoteAgentBridgeReachStatus,
+    prepareReach: decodeRemoteAgentBridgeReachStatus,
   }),
   customProviders: bridgeGroup(IPC_ENDPOINTS.customProviders, {
     list: decodeCustomProviders,

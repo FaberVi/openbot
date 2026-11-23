@@ -5,6 +5,7 @@ import {
   type AgentEvent,
   type AgentStepActivity,
   type AgentSummary,
+  type AgentTurnOrigin,
   agentProviderDescriptor,
   type BrowserControlState,
   type BrowserTab,
@@ -133,6 +134,12 @@ import {
 import { type ToolOutcome, TurnTraces, traceMessage } from "./turn-traces";
 import { collectProviderUsage } from "./usage-collection";
 import { USAGE_LIMIT_METHOD, type UsageLimitGate } from "./usage-limit-gate";
+
+function turnOrigin(kind: string | undefined): AgentTurnOrigin {
+  if (kind === "user" || kind === "agent" || kind === "routine") return kind;
+  if (kind === "remote-agent") return "agent";
+  return "unknown";
+}
 
 const logger = createOpenBotLogger("turn-lifecycle");
 const RETRY_NOTICE_ATTEMPTS = 3;
@@ -1326,7 +1333,7 @@ export class TurnLifecycle {
         const snapshot = this.#conversation.ensureSnapshot(agentId, publicThreadId);
         snapshot.activeTurnId = turnId;
         if (laneId === null || laneId === MESSAGING_LANE) this.#failedTurns.delete(agentId);
-        const origin = starting?.sender.kind ?? "unknown";
+        const origin = turnOrigin(starting?.sender.kind);
         if (!unprompted) {
           const association = Deferred.makeUnsafe<void, TurnOperationFailed>();
           this.#turnAssociations.set(turnId, association);
@@ -2655,7 +2662,7 @@ export class TurnLifecycle {
         threadId: publicThreadId,
         turnId,
         status: outcome,
-        origin: deliveries[0]?.delivery.sender.kind ?? "unknown",
+        origin: turnOrigin(deliveries[0]?.delivery.sender.kind),
         ...(quiet ? { quiet: true as const } : {}),
         ...(continuation ? { continues: true as const } : {}),
       });
@@ -2777,7 +2784,7 @@ export class TurnLifecycle {
         threadId: publicThreadId,
         turnId,
         status: terminal,
-        origin: deliveries[0]?.delivery.sender.kind ?? "unknown",
+        origin: turnOrigin(deliveries[0]?.delivery.sender.kind),
       });
     }).pipe(Effect.catchCause(report));
     for (const [itemId, itemTurnId] of this.#itemTurns) if (itemTurnId === turnId) this.#itemTurns.delete(itemId);
@@ -2942,7 +2949,7 @@ export class TurnLifecycle {
       threadId: this.#conversation.publicThreadId(agentId, threadId),
       turnId,
       status: "interrupted",
-      origin: deliveries[0]?.delivery.sender.kind ?? "unknown",
+      origin: turnOrigin(deliveries[0]?.delivery.sender.kind),
     });
   }, Effect.uninterruptible);
 

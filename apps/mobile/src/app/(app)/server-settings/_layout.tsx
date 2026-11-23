@@ -22,6 +22,7 @@ export default function ServerSettingsLayout() {
       <Stack.Screen name="audit" options={{ title: t("mobile.server.route.audit") }} />
       <Stack.Screen name="timezone" options={{ title: t("mobile.server.route.timezone") }} />
       <Stack.Screen name="signal-home" options={{ title: t("mobile.server.route.signalHome") }} />
+      <Stack.Screen name="remote-agents" options={{ title: t("mobile.server.settings.remoteAgents") }} />
       <Stack.Screen name="agents" options={{ title: t("mobile.server.route.agents") }} />
       <Stack.Screen name="voice-model" options={{ title: t("mobile.server.route.voiceModel") }} />
       <Stack.Screen name="connector" options={{ title: t("mobile.server.route.connectors") }} />

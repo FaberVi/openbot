@@ -344,8 +344,16 @@ export function ServerGeneralSection({ serverId }: { serverId: string }) {
   const signalHomes = signalHome.query.data;
   const signalHomeRow = signalHome.query.isError || (signalHomes?.homes.length ?? 0) > 1 ? signalHomeAccess : "hidden";
   const signalHomeInUse = signalHomes?.homes.find((home) => home.id === signalHomes.current);
+  const remoteAgentsRow = row((checks) => checks.canManageRemoteAgentBridge(serverId));
   const updateShown = Boolean(update.access || update.query.data) || updateRow === "disabled";
-  if (!updateShown && timezoneRow === "hidden" && agentsRow === "hidden" && signalHomeRow === "hidden") return null;
+  if (
+    !updateShown &&
+    timezoneRow === "hidden" &&
+    agentsRow === "hidden" &&
+    signalHomeRow === "hidden" &&
+    remoteAgentsRow === "hidden"
+  )
+    return null;
   const zone = timezone.query.data;
   return (
     <SettingsSection
@@ -405,6 +413,15 @@ export function ServerGeneralSection({ serverId }: { serverId: string }) {
           onPress={() => router.push({ pathname: "/server-settings/agents", params: { serverId } })}
         >
           <Typography.Paragraph>{t("mobile.server.route.agents")}</Typography.Paragraph>
+        </SettingsRow>
+      )}
+      {remoteAgentsRow === "hidden" ? null : (
+        <SettingsRow
+          leading={<RowIcon icon={Bot} />}
+          disabled={remoteAgentsRow === "disabled"}
+          onPress={() => router.push({ pathname: "/server-settings/remote-agents", params: { serverId } })}
+        >
+          <Typography.Paragraph>{t("mobile.server.settings.remoteAgents")}</Typography.Paragraph>
         </SettingsRow>
       )}
     </SettingsSection>
