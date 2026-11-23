@@ -1,3 +1,4 @@
+import { INPUT_LIMITS } from "@openbot/contracts/input-limits";
 import type { ConversationQuestionPrompt } from "@openbot/contracts/ipc";
 import { type ConversationUiBlock, UI_CHOICE_QUESTION_ID } from "@openbot/contracts/ui-blocks";
 import { Button, Typography } from "heroui-native";
@@ -6,7 +7,7 @@ import Check from "lucide-react-native/icons/check";
 import ChevronLeft from "lucide-react-native/icons/chevron-left";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import X from "lucide-react-native/icons/x";
-import { View } from "react-native";
+import { TextInput, View } from "react-native";
 import { useChatCardSurface } from "@/features/chat/components/chat-bubble-fill";
 import { ChatLocationRequest } from "@/features/chat/components/chat-location-request";
 import {
@@ -26,6 +27,7 @@ import { promptAnswerLabel } from "@/features/chat/model/question-prompt";
 import { vaultRequestOf } from "@/features/chat/model/vault-request";
 import { useMobileWorkspaceSelector } from "@/features/workspace/context/mobile-workspace-context";
 import { haptics } from "@/shared/lib/haptics";
+import { selectionColorProps } from "@/shared/lib/selection-color";
 import { useText } from "@/shared/lib/text";
 import { MIRROR_IN_RTL } from "@/shared/lib/text-direction";
 
@@ -48,6 +50,7 @@ export function ChatQuestionPrompt({
   const card = useChatCardSurface();
   const muted = useThemeColor("muted");
   const canEditPreview = useMobileWorkspaceSelector((workspace) => workspace.canEditUiBlockPreview(serverId));
+  const foreground = useThemeColor("foreground");
   const vaultRequest = vaultRequestOf(uiBlock);
   if (vaultRequest && uiBlock)
     return (
@@ -143,8 +146,20 @@ export function ChatQuestionPrompt({
       />
     );
   if (choice) return <ChatChoicePrompt spec={choice} controller={controller} canSend={canSend} />;
-  const { question, index, disabled, setIndex, answer, submit, replyInChat, setReplyInChat, picked, togglePick } =
-    controller;
+  const {
+    question,
+    index,
+    disabled,
+    setIndex,
+    answer,
+    submit,
+    replyInChat,
+    setReplyInChat,
+    picked,
+    togglePick,
+    draft,
+    setDraft,
+  } = controller;
 
   const described = question.options?.filter((option) => option.description) ?? [];
 
@@ -167,9 +182,34 @@ export function ChatQuestionPrompt({
           </View>
         ) : null}
         {question.isSecret ? (
-          <Typography type="body-xs" className="text-text-secondary">
-            {t("mobile.chat.question.secretBelow")}
-          </Typography>
+          <View className="gap-1.5 pt-1">
+            <Typography type="body-xs" className="text-text-secondary">
+              {t("mobile.chat.question.secretBelow")}
+            </Typography>
+            <TextInput
+              nativeID="chat-composer-input"
+              accessibilityLabel={t("mobile.chat.question.privatePlaceholder")}
+              placeholder={t("mobile.chat.question.privatePlaceholder")}
+              placeholderTextColor={String(muted)}
+              {...selectionColorProps(foreground)}
+              className="rounded-xl bg-background px-3 py-2.5 font-sans text-foreground"
+              style={{ fontSize: 16, borderCurve: "continuous" }}
+              secureTextEntry
+              autoCorrect={false}
+              autoCapitalize="none"
+              keyboardType="default"
+              autoComplete="off"
+              maxLength={INPUT_LIMITS.promptAnswerText}
+              value={draft}
+              editable={!disabled}
+              returnKeyType="send"
+              onSubmitEditing={() => {
+                const text = draft.trim();
+                if (!disabled && text) answer([text]);
+              }}
+              onChangeText={setDraft}
+            />
+          </View>
         ) : null}
         <View className="flex-row items-center gap-1 pt-1">
           {prompt.questions.length > 1 ? (
