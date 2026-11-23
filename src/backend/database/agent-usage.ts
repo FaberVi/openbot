@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
-import { KEY_ONLY_PROVIDERS } from "@openbot/contracts/agent-providers";
+import {
+  agentProviderReportsPerTurnUsage,
+  isKnownAgentProvider,
+  KEY_ONLY_PROVIDERS,
+} from "@openbot/contracts/agent-providers";
 import {
   type AgentAnalytics,
   type AgentAnalyticsInput,
@@ -474,12 +478,30 @@ function recordCost(row: DynamicRecord, tokens: UsageTokens): number | null {
     ).cost
   );
 }
+
+function missingMeteredTurns(turns: Set<string>, usageTurns: Set<string>): number {
+  let missing = 0;
+  for (const turn of turns) {
+    if (usageTurns.has(turn)) continue;
+    try {
+      const fields = JSON.parse(turn);
+      if (Array.isArray(fields) && isKnownAgentProvider(fields[1])) {
+        if (!agentProviderReportsPerTurnUsage(fields[1])) continue;
+      }
+    } catch {
+      missing++;
+      continue;
+    }
+    missing++;
+  }
+  return missing;
+}
 function finish(item: Bucket): AnalyticsTotals {
   return {
     ...item.values,
     sessions: item.sessions.size,
     turns: item.turns.size,
-    missingUsageTurns: [...item.turns].filter((turn) => !item.usageTurns.has(turn)).length,
+    missingUsageTurns: missingMeteredTurns(item.turns, item.usageTurns),
   };
 }
 

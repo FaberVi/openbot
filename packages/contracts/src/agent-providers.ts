@@ -83,6 +83,7 @@ export interface AgentProviderDescriptor {
   readonly steer: "native" | "deferred" | "reported";
   readonly concurrentTurns: boolean;
   readonly reportsUsage: boolean;
+  readonly reportsPerTurnUsage?: boolean;
   readonly approvalsInFullAccess: boolean;
   readonly foldersInFullAccess: boolean;
 }
@@ -228,6 +229,7 @@ const AGENT_PROVIDER_DESCRIPTOR_TABLE = {
     steer: "deferred",
     concurrentTurns: true,
     reportsUsage: true,
+    reportsPerTurnUsage: false,
     approvalsInFullAccess: true,
     foldersInFullAccess: false,
   },
@@ -516,6 +518,10 @@ export const AGENT_PROVIDER_DESCRIPTORS: readonly AgentProviderDescriptor[] = AG
 
 export function agentProviderDescriptor(provider: AgentProviderId): AgentProviderDescriptor {
   return AGENT_PROVIDER_DESCRIPTOR_TABLE[provider];
+}
+
+export function agentProviderReportsPerTurnUsage(provider: AgentProviderId): boolean {
+  return agentProviderDescriptor(provider).reportsPerTurnUsage !== false;
 }
 
 export function providerSteersTurns(provider: AgentProviderRef): boolean {
